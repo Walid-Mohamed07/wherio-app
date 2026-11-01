@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+body {
+  background-color: #09131c;
+  color: #0f172a;
+  font-family: var(--font-jakarta), var(--font-cairo), system-ui, sans-serif;
+}
+
+[dir='rtl'] {
+  font-family: var(--font-cairo), var(--font-jakarta), system-ui, sans-serif;
+}
