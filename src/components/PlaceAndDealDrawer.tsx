@@ -496,6 +496,11 @@ export default function PlaceAndDealDrawer({
                     val: placeData.attributes?.parking,
                   },
                   {
+                    labelEn: 'Valet Parking Service',
+                    labelAr: 'خدمة صف السيارات (فاليه - Valet)',
+                    val: placeData.attributes?.valetParking,
+                  },
+                  {
                     labelEn: 'Kids Friendly',
                     labelAr: 'مناسب للأطفال (Kids Friendly)',
                     val: placeData.attributes?.kidsFriendly,

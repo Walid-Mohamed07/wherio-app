@@ -32,10 +32,19 @@ import {
   Navigation,
   LogOut,
   RefreshCw,
+  KeyRound,
+  Compass,
 } from 'lucide-react';
-import { AwfarApi, CountryCode, LangCode } from '@/lib/api';
+import {
+  AwfarApi,
+  CountryCode,
+  LangCode,
+  getStoredSessionToken,
+  setStoredSessionToken,
+} from '@/lib/api';
 import AiConciergeTab from '@/components/AiConciergeTab';
 import PlaceAndDealDrawer from '@/components/PlaceAndDealDrawer';
+import OnboardingFlow, { OnboardingStep } from '@/components/OnboardingFlow';
 import {
   WherioBrandLogo,
   RegionSelectDropdown,
@@ -130,21 +139,25 @@ export default function WherioCustomerWebApp() {
   // Selected Place Drawer
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
+  // Onboarding & Session Check Flow (Splash -> Country -> Get Started Slides -> Login / Guest)
+  const [onboardingStep, setOnboardingStep] =
+    useState<OnboardingStep>('splash');
+
   // Identity, Dual Verification & Registration Gate State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [showAuthGateModal, setShowAuthGateModal] = useState<boolean>(false);
   const [pendingActionAfterAuth, setPendingActionAfterAuth] = useState<
     (() => void) | null
   >(null);
 
   const [currentUser, setCurrentUser] = useState({
-    id: 'user-verified-omar',
-    name: 'Omar Al-Nuaimi',
-    phone: '+971504445566',
-    email: 'omar.alnuaimi@wherio.ae',
-    role: 'CUSTOMER',
-    isPhoneVerified: true,
-    isEmailVerified: true,
+    id: '',
+    name: '',
+    phone: '',
+    email: '',
+    role: 'GUEST',
+    isPhoneVerified: false,
+    isEmailVerified: false,
   });
   const [favoritePlaceIds, setFavoritePlaceIds] = useState<string[]>([
     'place-warner-bros-abudhabi',
@@ -165,10 +178,75 @@ export default function WherioCustomerWebApp() {
 
   // OTP & Email Form States
   const [phoneInput, setPhoneInput] = useState('+971504445566');
-  const [emailInput, setEmailInput] = useState('omar.alnuaimi@wherio.ae');
-  const [nameInput, setNameInput] = useState('Omar Al-Nuaimi');
-  const [otpInput, setOtpInput] = useState('1234');
+  const [emailInput, setEmailInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [otpInput, setOtpInput] = useState('');
   const [authStatusMsg, setAuthStatusMsg] = useState<string | null>(null);
+
+  // Startup Splash Screen & Active Session Check
+  useEffect(() => {
+    let mounted = true;
+    const verifyStartupSession = async () => {
+      const savedCountry =
+        typeof window !== 'undefined'
+          ? (window.localStorage.getItem('wherio_country') as CountryCode | null)
+          : null;
+      const savedLang =
+        typeof window !== 'undefined'
+          ? (window.localStorage.getItem('wherio_lang') as LangCode | null)
+          : null;
+      if (savedCountry && ['AE', 'SA', 'EG'].includes(savedCountry)) {
+        setCountry(savedCountry);
+        setSelectedCityId(
+          savedCountry === 'SA'
+            ? 'riyadh'
+            : savedCountry === 'EG'
+              ? 'cairo'
+              : 'abudhabi',
+        );
+      }
+      if (savedLang && ['en', 'ar'].includes(savedLang)) {
+        setLang(savedLang);
+      }
+
+      const existingToken = getStoredSessionToken();
+      await new Promise((r) => setTimeout(r, 1100));
+      if (!mounted) return;
+
+      if (existingToken) {
+        try {
+          const sessionRes = await AwfarApi.checkSession(savedCountry || 'AE');
+          if (sessionRes?.authenticated && sessionRes?.user) {
+            setCurrentUser({
+              id: sessionRes.user.id,
+              name: sessionRes.user.name,
+              phone: sessionRes.user.phone,
+              email: sessionRes.user.email,
+              role: sessionRes.user.role,
+              isPhoneVerified: sessionRes.user.isPhoneVerified,
+              isEmailVerified: sessionRes.user.isEmailVerified,
+            });
+            setNameInput(sessionRes.user.name || '');
+            setPhoneInput(sessionRes.user.phone || '');
+            setEmailInput(sessionRes.user.email || '');
+            setIsAuthenticated(true);
+            setOnboardingStep('done');
+            return;
+          }
+        } catch {
+          setStoredSessionToken(null);
+        }
+      }
+
+      // No active authenticated token -> start onboarding at Country Selection (Page 2 of PDF)
+      setOnboardingStep('country');
+    };
+
+    verifyStartupSession();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const currentCityMeta =
     CITY_COORDS[selectedCityId] || CITY_COORDS['abudhabi'];
@@ -178,6 +256,9 @@ export default function WherioCustomerWebApp() {
   // Sync country switcher with launch city
   const handleCountryChange = (nextCountry: CountryCode) => {
     setCountry(nextCountry);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('wherio_country', nextCountry);
+    }
     if (nextCountry === 'AE') {
       setSelectedCityId('abudhabi');
     } else if (nextCountry === 'SA') {
@@ -324,10 +405,13 @@ export default function WherioCustomerWebApp() {
       const res = await AwfarApi.verifyOtp(
         phoneInput,
         otpInput,
-        nameInput,
+        nameInput || 'Wherio Member',
         country,
-        emailInput,
+        emailInput || undefined,
       );
+      if (res?.accessToken) {
+        setStoredSessionToken(res.accessToken);
+      }
       if (res?.user) {
         setCurrentUser({
           id: res.user.id,
@@ -452,15 +536,27 @@ export default function WherioCustomerWebApp() {
 
   const handleLogoutSession = async () => {
     try {
-      await AwfarApi.logout(currentUser.id, country);
+      if (currentUser.id) {
+        await AwfarApi.logout(currentUser.id, country);
+      }
     } catch (e) {
       console.error(e);
     }
+    setStoredSessionToken(null);
     setIsAuthenticated(false);
+    setCurrentUser({
+      id: '',
+      name: '',
+      phone: '',
+      email: '',
+      role: 'GUEST',
+      isPhoneVerified: false,
+      isEmailVerified: false,
+    });
     setAuthStatusMsg(
       isAr
-        ? 'تم تسجيل الخروج بنجاح. أنت الآن في وضع التصفح العام.'
-        : 'Logged out cleanly. You are now in Public Directory Preview mode.',
+        ? 'تم تسجيل الخروج بنجاح. أنت الآن في وضع الزائر.'
+        : 'Signed out cleanly. You are now browsing as a Guest.',
     );
   };
 
@@ -475,8 +571,48 @@ export default function WherioCustomerWebApp() {
     if (catId === 'cat-restaurants') return <Utensils className="h-5 w-5" />;
     if (catId === 'cat-cafes') return <Coffee className="h-5 w-5" />;
     if (catId === 'cat-cinemas') return <Film className="h-5 w-5" />;
+    if (catId === 'cat-parking') return <Car className="h-5 w-5" />;
     return <FerrisWheel className="h-5 w-5" />;
   };
+
+  if (onboardingStep !== 'done') {
+    return (
+      <OnboardingFlow
+        step={onboardingStep}
+        setStep={setOnboardingStep}
+        country={country}
+        onSelectCountry={handleCountryChange}
+        lang={lang}
+        onSelectLang={(nextLang) => {
+          setLang(nextLang);
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('wherio_lang', nextLang);
+          }
+        }}
+        countriesData={countriesData}
+        onAuthenticated={(user) => {
+          setCurrentUser({
+            id: user.id,
+            name: user.name,
+            phone: user.phone,
+            email: user.email,
+            role: user.role,
+            isPhoneVerified: user.isPhoneVerified,
+            isEmailVerified: user.isEmailVerified,
+          });
+          setNameInput(user.name || '');
+          setPhoneInput(user.phone || '');
+          setEmailInput(user.email || '');
+          setIsAuthenticated(true);
+          setOnboardingStep('done');
+        }}
+        onContinueAsGuest={() => {
+          setIsAuthenticated(false);
+          setOnboardingStep('done');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 flex justify-center">
@@ -627,7 +763,7 @@ export default function WherioCustomerWebApp() {
                 </div>
               </div>
 
-              {/* 4 Main Categories Grid */}
+              {/* 5 Main Categories Grid */}
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <h2 className="text-xs font-extrabold text-[#072549]">
@@ -648,7 +784,7 @@ export default function WherioCustomerWebApp() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-5 gap-1.5">
                   {(categories.length > 0
                     ? categories
                     : [
@@ -663,6 +799,11 @@ export default function WherioCustomerWebApp() {
                           id: 'cat-entertainment',
                           nameEn: 'Entertainment',
                           nameAr: 'ترفيه وأنشطة',
+                        },
+                        {
+                          id: 'cat-parking',
+                          nameEn: 'Parking Spots',
+                          nameAr: 'مواقف السيارات',
                         },
                       ]
                   ).map((cat: any) => {
@@ -751,6 +892,12 @@ export default function WherioCustomerWebApp() {
                     en: 'Parking Available',
                     ar: 'مواقف سيارات',
                     icon: <Car className="h-3 w-3" />,
+                  },
+                  {
+                    key: 'valet',
+                    en: 'Valet Service',
+                    ar: 'خدمة فاليه',
+                    icon: <KeyRound className="h-3 w-3" />,
                   },
                   {
                     key: 'outdoor_seating',
@@ -996,6 +1143,13 @@ export default function WherioCustomerWebApp() {
                                   {isAr ? 'موقف سيارات' : 'Parking'}
                                 </span>
                               )}
+                              {place.attributes?.valetParking ===
+                                'AVAILABLE' && (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-0.5 font-bold text-teal-800">
+                                  <CheckCircle2 className="h-2.5 w-2.5 text-teal-600" />
+                                  {isAr ? 'فاليه (Valet)' : 'Valet'}
+                                </span>
+                              )}
                               {hasUnknownPrice ? (
                                 <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 font-bold text-amber-800">
                                   <HelpCircle className="h-2.5 w-2.5 text-amber-600" />
@@ -1142,6 +1296,11 @@ export default function WherioCustomerWebApp() {
                         key: 'parking',
                         en: 'Parking Available',
                         ar: 'مواقف سيارات',
+                      },
+                      {
+                        key: 'valet',
+                        en: 'Valet Service',
+                        ar: 'خدمة صف السيارات (فاليه)',
                       },
                       {
                         key: 'outdoor_seating',
@@ -1430,81 +1589,29 @@ export default function WherioCustomerWebApp() {
                   </div>
                 )}
 
-                {/* Quick Demo Persona Switcher to Test All Verification Scenarios */}
-                <div className="mt-3.5 border-t border-slate-100 pt-3">
-                  <p className="text-[11px] font-extrabold text-[#072549]">
-                    {isAr
-                      ? 'تبديل سريع بين حالات الحساب لاختبار بوابات التوثيق:'
-                      : '1-Click Persona Switcher (Test Login Gate & Review Verification Gate):'}
+                {/* Clean Real Account Actions (No Test Demo Persona Switcher) */}
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+                  <p className="text-[11px] text-slate-500">
+                    {isAuthenticated
+                      ? isAr
+                        ? 'جلستك محمية وموثقة عبر رمز الجلسة النشط.'
+                        : 'Your session is active and protected.'
+                      : isAr
+                        ? 'سجل دخولك أدناه لتفعيل المفضلة والمساعد الذكي والتقييمات.'
+                        : 'Sign in below to unlock Favorites, AI Concierge & Reviews.'}
                   </p>
-                  <div className="mt-2 grid grid-cols-1 gap-1.5">
-                    <button
-                      onClick={() => {
-                        setIsAuthenticated(true);
-                        setCurrentUser({
-                          id: 'user-verified-omar',
-                          name: 'Omar Al-Nuaimi',
-                          phone: '+971504445566',
-                          email: 'omar.alnuaimi@wherio.ae',
-                          role: 'CUSTOMER',
-                          isPhoneVerified: true,
-                          isEmailVerified: true,
-                        });
-                      }}
-                      className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${
-                        isAuthenticated && currentUser.isEmailVerified
-                          ? 'border-[#00B89C] bg-[#00B89C]/10 text-[#072549]'
-                          : 'border-slate-200 bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      1.{' '}
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingStep('country')}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-[#072549] hover:border-[#0072DC]"
+                  >
+                    <Compass className="h-3.5 w-3.5 text-[#0072DC]" />
+                    <span>
                       {isAr
-                        ? 'عمر النعيمي (هاتف OTP + بريد موثق — يمكنه إضافة التقييمات)'
-                        : 'Omar Al-Nuaimi (Verified Phone + Verified Email — Full Access)'}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsAuthenticated(true);
-                        setCurrentUser({
-                          id: 'user-unverified-guest',
-                          name: 'Sara Al-Mansoori',
-                          phone: '+971509998877',
-                          email: 'sara.guest@example.com',
-                          role: 'CUSTOMER',
-                          isPhoneVerified: true,
-                          isEmailVerified: false,
-                        });
-                        setEmailInput('sara.guest@example.com');
-                      }}
-                      className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${
-                        isAuthenticated && !currentUser.isEmailVerified
-                          ? 'border-amber-500 bg-amber-50 text-amber-900'
-                          : 'border-slate-200 bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      2.{' '}
-                      {isAr
-                        ? 'سارة المنصوري (هاتف موثق فقط بدون بريد — يختبر منع التقييم قبل توثيق البريد)'
-                        : 'Sara Al-Mansoori (Phone Verified Only — Tests Email Gate on Reviews)'}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsAuthenticated(false);
-                      }}
-                      className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${
-                        !isAuthenticated
-                          ? 'border-rose-500 bg-rose-50 text-rose-900'
-                          : 'border-slate-200 bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      3.{' '}
-                      {isAr
-                        ? 'زائر غير مسجل (يختبر نافذة طلب التسجيل عند فتح التفاصيل أو المساعد الذكي)'
-                        : 'Logged-Out Visitor (Tests Registration Gate on Details & AI)'}
-                    </button>
-                  </div>
+                        ? 'شاشة البداية واختيار الدولة'
+                        : 'Welcome & Country Setup'}
+                    </span>
+                  </button>
                 </div>
               </div>
 
@@ -1641,6 +1748,11 @@ export default function WherioCustomerWebApp() {
                         en: 'Entertainment',
                         ar: 'ترفيه وأنشطة',
                       },
+                      {
+                        id: 'cat-parking',
+                        en: 'Parking Spots',
+                        ar: 'مواقف السيارات',
+                      },
                     ].map((cat) => {
                       const active = preferredCategories.includes(cat.id);
                       return (
@@ -1679,6 +1791,11 @@ export default function WherioCustomerWebApp() {
                         ar: 'مناسب للأطفال',
                       },
                       { id: 'parking', en: 'Parking', ar: 'مواقف سيارات' },
+                      {
+                        id: 'valet',
+                        en: 'Valet Service',
+                        ar: 'خدمة فاليه',
+                      },
                       { id: 'wifi', en: 'Fast Wi-Fi', ar: 'واي فاي' },
                       {
                         id: 'outdoor_seating',
@@ -1782,27 +1899,14 @@ export default function WherioCustomerWebApp() {
               <div className="mt-4 space-y-2">
                 <button
                   onClick={() => {
-                    setIsAuthenticated(true);
-                    setCurrentUser({
-                      id: 'user-verified-omar',
-                      name: 'Omar Al-Nuaimi',
-                      phone: '+971504445566',
-                      email: 'omar.alnuaimi@wherio.ae',
-                      role: 'CUSTOMER',
-                      isPhoneVerified: true,
-                      isEmailVerified: true,
-                    });
                     setShowAuthGateModal(false);
-                    if (pendingActionAfterAuth) {
-                      pendingActionAfterAuth();
-                      setPendingActionAfterAuth(null);
-                    }
+                    setOnboardingStep('auth');
                   }}
                   className="w-full rounded-xl bg-[#072549] py-2.5 text-xs font-extrabold text-white hover:bg-[#0072DC]"
                 >
                   {isAr
-                    ? 'دخول فوري بحساب تجريبي موثق (هاتف OTP + بريد إلكتروني)'
-                    : '1-Click Continue with Verified Demo Account'}
+                    ? 'تسجيل الدخول أو إنشاء حساب (هاتف OTP + بريد إلكتروني)'
+                    : 'Sign In or Create Account (Phone OTP & Email)'}
                 </button>
                 <button
                   onClick={() => {
@@ -1812,8 +1916,8 @@ export default function WherioCustomerWebApp() {
                   className="w-full rounded-xl border border-slate-200 py-2 text-xs font-bold text-[#072549]"
                 >
                   {isAr
-                    ? 'التسجيل برقم هاتف وبريد إلكتروني جديد'
-                    : 'Register with Phone OTP & Email'}
+                    ? 'الانتقال إلى صفحة حسابي'
+                    : 'Go to Account Settings'}
                 </button>
                 <button
                   onClick={() => setShowAuthGateModal(false)}

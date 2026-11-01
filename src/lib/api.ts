@@ -4,16 +4,34 @@ export type LangCode = "en" | "ar";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
 
+export const TOKEN_STORAGE_KEY = "wherio_access_token";
+
+export function getStoredSessionToken(): string {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(TOKEN_STORAGE_KEY) || "";
+}
+
+export function setStoredSessionToken(token?: string | null): void {
+  if (typeof window === "undefined") return;
+  if (token) {
+    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } else {
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+  }
+}
+
 async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
   country: CountryCode = "AE",
   lang: LangCode = "en",
 ): Promise<T> {
+  const token = getStoredSessionToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "x-country": country,
     "x-lang": lang,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers as Record<string, string>),
   };
 
@@ -354,6 +372,20 @@ export const AwfarApi = {
 
   getUserProfile: (userId: string, country: CountryCode = "AE") =>
     apiRequest<any>(`/auth/profile/${userId}`, {}, country, "en"),
+
+  checkSession: (country: CountryCode = "AE") =>
+    apiRequest<any>("/auth/session", {}, country, "en"),
+
+  createGuestSession: (country: CountryCode = "AE") =>
+    apiRequest<any>(
+      "/auth/guest",
+      {
+        method: "POST",
+        body: JSON.stringify({ countryCode: country }),
+      },
+      country,
+      "en",
+    ),
 };
 
 export const WherioApi = AwfarApi;
