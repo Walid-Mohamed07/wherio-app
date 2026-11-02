@@ -2,7 +2,9 @@ export type CountryCode = "SA" | "AE" | "EG";
 export type LangCode = "en" | "ar";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
+  process.env.API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:4000/api/v1";
 
 export const TOKEN_STORAGE_KEY = "wherio_access_token";
 
@@ -69,7 +71,12 @@ export const AwfarApi = {
       keyword?: string;
       amenities?: string;
       priceRange?: string;
-      sortBy?: "relevance" | "distance" | "rating" | "completeness" | "discount";
+      sortBy?:
+        | "relevance"
+        | "distance"
+        | "rating"
+        | "completeness"
+        | "discount";
     },
     country: CountryCode,
     lang: LangCode,
