@@ -1,10 +1,21 @@
 export type CountryCode = "SA" | "AE" | "EG";
 export type LangCode = "en" | "ar";
 
-const API_BASE_URL =
-  process.env.API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:4000/api/v1";
+function resolveApiBaseUrl(): string {
+  const raw = (
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.API_BASE_URL ||
+    "http://localhost:4000/api/v1"
+  )
+    .trim()
+    .replace(/\/+$/, "");
+  if (raw.endsWith("/api/v1")) {
+    return raw;
+  }
+  return `${raw}/api/v1`;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export const TOKEN_STORAGE_KEY = "wherio_access_token";
 
