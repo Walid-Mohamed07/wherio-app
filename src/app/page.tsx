@@ -363,7 +363,7 @@ export default function WherioCustomerWebApp() {
     effectiveLng,
   ]);
 
-  // Registration Gate Guard (Public directory preview is open; Place Details, AI Concierge & Favorites require login)
+  // Registration Gate Guard (Place details are public; AI Concierge, Favorites & direct contact require login)
   const requireAuthThen = (action: () => void) => {
     if (isAuthenticated) {
       action();
@@ -374,9 +374,7 @@ export default function WherioCustomerWebApp() {
   };
 
   const handleOpenPlaceDetails = (placeId: string) => {
-    requireAuthThen(() => {
-      setSelectedPlaceId(placeId);
-    });
+    setSelectedPlaceId(placeId);
   };
 
   const handleToggleFavorite = async (placeId: string) => {
@@ -1890,8 +1888,8 @@ export default function WherioCustomerWebApp() {
                   </h3>
                   <p className="text-[11px] text-slate-500">
                     {isAr
-                      ? 'يتطلب عرض التفاصيل الكاملة أو استخدام المساعد الذكي أو المفضلة حساباً مسجلاً في ويريو.'
-                      : 'Viewing full Place Details, using the AI Concierge, or saving Favorites requires a registered Wherio account.'}
+                      ? 'يتطلب استخدام الموقع والتواصل المباشر أو المساعد الذكي أو حفظ المفضلة حساباً مسجلاً في ويريو.'
+                      : 'Using Location & Direct Contact, the AI Concierge, or saving Favorites requires a registered Wherio account.'}
                   </p>
                 </div>
               </div>
@@ -1941,8 +1939,13 @@ export default function WherioCustomerWebApp() {
               lng: effectiveLng,
             }}
             currentUser={currentUser}
+            isAuthenticated={isAuthenticated}
             isFavorite={favoritePlaceIds.includes(selectedPlaceId)}
             onToggleFavorite={handleToggleFavorite}
+            onRequireAuth={() => {
+              setPendingActionAfterAuth(null);
+              setShowAuthGateModal(true);
+            }}
             onRequireVerifyEmail={() => {
               setSelectedPlaceId(null);
               setActiveBottomTab('account');
