@@ -37,8 +37,10 @@ interface PlaceAndDealDrawerProps {
     isPhoneVerified: boolean;
     isEmailVerified: boolean;
   };
+  isAuthenticated: boolean;
   isFavorite?: boolean;
   onToggleFavorite?: (placeId: string) => void;
+  onRequireAuth: () => void;
   onRequireVerifyEmail?: () => void;
   onClose: () => void;
 }
@@ -49,8 +51,10 @@ export default function PlaceAndDealDrawer({
   lang,
   userCoords,
   currentUser,
+  isAuthenticated,
   isFavorite = false,
   onToggleFavorite,
+  onRequireAuth,
   onRequireVerifyEmail,
   onClose,
 }: PlaceAndDealDrawerProps) {
@@ -603,7 +607,17 @@ export default function PlaceAndDealDrawer({
             </div>
 
             {/* Location, Contact & Google Maps */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+            <div
+              onClick={(event) => {
+                if (!isAuthenticated) {
+                  event.preventDefault();
+                  onRequireAuth();
+                }
+              }}
+              className={`rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xs ${
+                !isAuthenticated ? 'cursor-pointer' : ''
+              }`}
+            >
               <h3 className="text-xs font-extrabold text-[#072549]">
                 {isAr ? 'العنوان والتواصل المباشر:' : 'Location & Direct Contact:'}
               </h3>
