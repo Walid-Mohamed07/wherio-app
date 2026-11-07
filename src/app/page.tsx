@@ -35,6 +35,8 @@ import {
   KeyRound,
   Compass,
   ShoppingBag,
+  Camera,
+  Wrench,
 } from 'lucide-react';
 import {
   AwfarApi,
@@ -46,7 +48,10 @@ import {
 import AiConciergeTab from '@/components/AiConciergeTab';
 import PlaceAndDealDrawer from '@/components/PlaceAndDealDrawer';
 import OnboardingFlow, { OnboardingStep } from '@/components/OnboardingFlow';
-import SmartParkingAndStoreHub from '@/components/SmartParkingAndStoreHub';
+import GlobalCartDrawer, {
+  GlobalCartItem,
+  HeaderCartButton,
+} from '@/components/GlobalCartDrawer';
 import {
   WherioBrandLogo,
   RegionSelectDropdown,
@@ -105,7 +110,7 @@ export default function WherioCustomerWebApp() {
   const [selectedCityId, setSelectedCityId] = useState<string>('abudhabi');
   const [lang, setLang] = useState<LangCode>('en');
   const [activeBottomTab, setActiveBottomTab] = useState<
-    'explore' | 'search' | 'parking' | 'store' | 'ai' | 'favorites' | 'account'
+    'explore' | 'search' | 'ai' | 'favorites' | 'account'
   >('explore');
 
   const isAr = lang === 'ar';
@@ -138,8 +143,43 @@ export default function WherioCustomerWebApp() {
     'relevance' | 'distance' | 'rating' | 'completeness'
   >('relevance');
 
-  // Selected Place Drawer
+  // Selected Place Drawer & Initial Tab
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [selectedPlaceInitialTab, setSelectedPlaceInitialTab] = useState<
+    'overview' | 'parking' | 'media' | 'reviews'
+  >('overview');
+
+  // Global Unified Cart State & Header Pulse Animation
+  const [cart, setCart] = useState<GlobalCartItem[]>([]);
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [cartPulse, setCartPulse] = useState(false);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
+
+  const handleUpdateCartItem = (item: GlobalCartItem, delta: number) => {
+    setCart((prev) => {
+      const existing = prev.find((c) => c.productId === item.productId);
+      if (!existing && delta > 0) {
+        return [...prev, { ...item, quantity: delta }];
+      }
+      if (existing) {
+        const nextQty = existing.quantity + delta;
+        if (nextQty <= 0) {
+          return prev.filter((c) => c.productId !== item.productId);
+        }
+        return prev.map((c) =>
+          c.productId === item.productId ? { ...c, quantity: nextQty } : c,
+        );
+      }
+      return prev;
+    });
+    setCartPulse(true);
+    setTimeout(() => setCartPulse(false), 450);
+  };
+
+  const totalCartItemsCount = cart.reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  );
 
   // Onboarding & Session Check Flow (Splash -> Country -> Get Started Slides -> Login / Guest)
   const [onboardingStep, setOnboardingStep] =
@@ -375,7 +415,11 @@ export default function WherioCustomerWebApp() {
     }
   };
 
-  const handleOpenPlaceDetails = (placeId: string) => {
+  const handleOpenPlaceDetails = (
+    placeId: string,
+    tab: 'overview' | 'parking' | 'media' | 'reviews' = 'overview',
+  ) => {
+    setSelectedPlaceInitialTab(tab);
     setSelectedPlaceId(placeId);
   };
 
@@ -621,10 +665,10 @@ export default function WherioCustomerWebApp() {
         dir={isAr ? 'rtl' : 'ltr'}
         className="relative flex min-h-screen w-full max-w-[430px] flex-col bg-slate-50 shadow-2xl"
       >
-        {/* TOP STICKY BAR: Wherio Logo, Country/Launch City & Language Switchers */}
+        {/* TOP STICKY BAR: Wherio Logo, Compact Country/Language Switchers & Global Cart SVG Button */}
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 px-3.5 pt-3 pb-2.5 backdrop-blur-md">
-          <div className="flex items-center justify-between gap-2">
-            <WherioBrandLogo size="md" showSubtitle={true} isAr={isAr} />
+          <div className="flex items-center justify-between gap-1.5">
+            <WherioBrandLogo size="sm" showSubtitle={true} isAr={isAr} />
 
             <div className="flex items-center gap-1.5">
               <RegionSelectDropdown
@@ -637,6 +681,13 @@ export default function WherioCustomerWebApp() {
                 value={lang}
                 onChange={setLang}
                 variant="compact"
+              />
+              <HeaderCartButton
+                totalItemsCount={totalCartItemsCount}
+                activeOrdersCount={activeOrdersCount}
+                pulse={cartPulse}
+                onClick={() => setIsCartDrawerOpen(true)}
+                isAr={isAr}
               />
             </div>
           </div>
@@ -1164,7 +1215,56 @@ export default function WherioCustomerWebApp() {
                               )}
                             </div>
 
-                            {/* Distance & External Score Footer */}
+                            {/* Injected Smart Parking Live Slot Status & Reserve CTA on Explore Cards */}
+                            {place.parkingConfig && (
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenPlaceDetails(place.id, 'parking');
+                                }}
+                                className="mt-2.5 flex items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50/75 px-3 py-2 transition hover:border-emerald-400"
+                              >
+                                <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                                  {place.parkingConfig.managementMode ===
+                                  'CAMERA_AI' ? (
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-1.5 py-0.5 text-[9px] font-extrabold text-white">
+                                      <Camera className="h-2.5 w-2.5" />
+                                      {isAr ? 'كاميرا ذكية' : 'Camera AI'}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-1.5 py-0.5 text-[9px] font-extrabold text-white">
+                                      <Wrench className="h-2.5 w-2.5" />
+                                      {isAr ? 'يدوي' : 'Manual'}
+                                    </span>
+                                  )}
+                                  <span className="font-extrabold text-[#072549]">
+                                    {place.parkingConfig.availableSlotsCount} /{' '}
+                                    {place.parkingConfig.totalSlots}{' '}
+                                    {isAr ? 'موقف متاح' : 'Slots Free'}
+                                  </span>
+                                  {place.parkingConfig.reservedSlotsCount >
+                                    0 && (
+                                    <span className="text-[10px] font-bold text-amber-700">
+                                      • {place.parkingConfig.reservedSlotsCount}{' '}
+                                      {isAr ? 'محجوز' : 'Reserved'}
+                                    </span>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenPlaceDetails(place.id, 'parking');
+                                  }}
+                                  className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[#072549] px-2.5 py-1 text-[10px] font-extrabold text-white hover:bg-[#0c3566]"
+                                >
+                                  <Car className="h-3 w-3 text-[#00D2B4]" />
+                                  {isAr ? 'احجز موقف' : 'Reserve Slot'}
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Distance, Store/Menu Quick Button & External Score Footer */}
                             <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-[11px]">
                               <div className="flex items-center gap-2 text-slate-600">
                                 <span className="inline-flex items-center gap-1 font-bold text-[#072549]">
@@ -1179,14 +1279,36 @@ export default function WherioCustomerWebApp() {
                                 </span>
                               </div>
 
-                              {place.externalRating && (
-                                <span className="text-[10px] font-semibold text-slate-400">
-                                  {isAr ? 'تقييم خارجي:' : 'Ext:'}{' '}
-                                  <strong className="text-slate-600">
-                                    {place.externalRating.rating}/5
-                                  </strong>
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2">
+                                {Array.isArray(place.catalogProducts) &&
+                                  place.catalogProducts.length > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenPlaceDetails(
+                                          place.id,
+                                          'media',
+                                        );
+                                      }}
+                                      className="inline-flex items-center gap-1 rounded-lg bg-[#0072DC]/10 px-2 py-1 text-[10px] font-extrabold text-[#0072DC] transition hover:bg-[#0072DC] hover:text-white"
+                                    >
+                                      <ShoppingBag className="h-3 w-3" />
+                                      <span>
+                                        {isAr ? 'المنيو والطلب' : 'Menu & Store'}
+                                      </span>
+                                    </button>
+                                  )}
+
+                                {place.externalRating && (
+                                  <span className="text-[10px] font-semibold text-slate-400">
+                                    {isAr ? 'تقييم خارجي:' : 'Ext:'}{' '}
+                                    <strong className="text-slate-600">
+                                      {place.externalRating.rating}/5
+                                    </strong>
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1869,17 +1991,6 @@ export default function WherioCustomerWebApp() {
               </a>
             </div>
           )}
-
-          {(activeBottomTab === 'parking' || activeBottomTab === 'store') && (
-            <div className="p-4">
-              <SmartParkingAndStoreHub
-                mode={activeBottomTab}
-                cityId={selectedCityId}
-                isAr={isAr}
-                currentUser={currentUser}
-              />
-            </div>
-          )}
         </main>
 
         {/* REGISTRATION / LOGIN GATE MODAL */}
@@ -1941,7 +2052,7 @@ export default function WherioCustomerWebApp() {
           </div>
         )}
 
-        {/* PLACE DETAILS DRAWER */}
+        {/* PLACE DETAILS DRAWER (WITH INTEGRATED PARKING SLOTS & STORE ITEMS IN MENUS & POSTERS) */}
         {selectedPlaceId && (
           <PlaceAndDealDrawer
             placeId={selectedPlaceId}
@@ -1964,10 +2075,35 @@ export default function WherioCustomerWebApp() {
               setActiveBottomTab('account');
             }}
             onClose={() => setSelectedPlaceId(null)}
+            initialTab={selectedPlaceInitialTab}
+            cart={cart}
+            onUpdateCartItem={handleUpdateCartItem}
+            onOpenCart={() => {
+              setSelectedPlaceId(null);
+              setIsCartDrawerOpen(true);
+            }}
+            onParkingUpdated={fetchPlaces}
           />
         )}
 
-        {/* BOTTOM NAVIGATION BAR */}
+        {/* GLOBAL UNIFIED CART & ORDERS DRAWER (ACCESSED FROM HEADER CART SVG) */}
+        <GlobalCartDrawer
+          isOpen={isCartDrawerOpen}
+          onClose={() => setIsCartDrawerOpen(false)}
+          cart={cart}
+          onUpdateQty={handleUpdateCartItem}
+          onClearCart={() => setCart([])}
+          cityId={selectedCityId}
+          lang={lang}
+          user={{
+            id: currentUser.id,
+            displayName: currentUser.name,
+            phone: currentUser.phone,
+          }}
+          onActiveOrdersCountChange={setActiveOrdersCount}
+        />
+
+        {/* BOTTOM NAVIGATION BAR (ORIGINAL 5 TABS) */}
         <nav className="fixed bottom-0 z-30 flex w-full max-w-[430px] items-center justify-around border-t border-slate-200 bg-white/95 py-2 backdrop-blur-md">
           {[
             {
@@ -1977,26 +2113,20 @@ export default function WherioCustomerWebApp() {
               icon: <Home className="h-4 w-4" />,
             },
             {
-              id: 'parking',
-              labelEn: 'Parking',
-              labelAr: 'المواقف',
-              icon: <Car className="h-4 w-4" />,
-            },
-            {
-              id: 'store',
-              labelEn: 'Store & Cart',
-              labelAr: 'المتجر',
-              icon: <ShoppingBag className="h-4 w-4" />,
+              id: 'search',
+              labelEn: 'Filters',
+              labelAr: 'الفلاتر',
+              icon: <SlidersHorizontal className="h-4 w-4" />,
             },
             {
               id: 'ai',
               labelEn: 'AI Concierge',
-              labelAr: 'المساعد',
+              labelAr: 'المساعد الذكي',
               icon: <Sparkles className="h-4 w-4" />,
             },
             {
               id: 'favorites',
-              labelEn: 'Saved',
+              labelEn: 'Favorites',
               labelAr: 'المفضلة',
               icon: <Heart className="h-4 w-4" />,
             },

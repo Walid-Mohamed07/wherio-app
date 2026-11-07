@@ -33,7 +33,7 @@ export function setStoredSessionToken(token?: string | null): void {
   }
 }
 
-async function apiRequest<T>(
+export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
   country: CountryCode = "AE",
@@ -62,6 +62,8 @@ async function apiRequest<T>(
   }
   return data as T;
 }
+
+export const apiFetch = apiRequest;
 
 export const AwfarApi = {
   getCountries: (country: CountryCode, lang: LangCode) =>
