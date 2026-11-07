@@ -21,8 +21,20 @@ import {
   AlertTriangle,
   Globe,
   Camera,
+  Wrench,
+  Lock,
+  Zap,
+  Crown,
+  Accessibility,
+  ShoppingBag,
+  Plus,
+  Minus,
+  Box,
+  Scale,
+  RefreshCw,
 } from 'lucide-react';
-import { AwfarApi, CountryCode, LangCode } from '@/lib/api';
+import { AwfarApi, apiFetch, CountryCode, LangCode } from '@/lib/api';
+import { GlobalCartItem } from './GlobalCartDrawer';
 
 interface PlaceAndDealDrawerProps {
   placeId?: string | null;
@@ -43,6 +55,11 @@ interface PlaceAndDealDrawerProps {
   onRequireAuth: () => void;
   onRequireVerifyEmail?: () => void;
   onClose: () => void;
+  initialTab?: 'overview' | 'parking' | 'media' | 'reviews';
+  cart?: GlobalCartItem[];
+  onUpdateCartItem?: (item: GlobalCartItem, delta: number) => void;
+  onOpenCart?: () => void;
+  onParkingUpdated?: () => void;
 }
 
 export default function PlaceAndDealDrawer({
@@ -57,13 +74,31 @@ export default function PlaceAndDealDrawer({
   onRequireAuth,
   onRequireVerifyEmail,
   onClose,
+  initialTab = 'overview',
+  cart = [],
+  onUpdateCartItem,
+  onOpenCart,
+  onParkingUpdated,
 }: PlaceAndDealDrawerProps) {
   const isAr = lang === 'ar';
   const [loading, setLoading] = useState(true);
   const [placeData, setPlaceData] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'media' | 'reviews'>(
-    'overview',
-  );
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'parking' | 'media' | 'reviews'
+  >(initialTab);
+
+  // Parking reservation state (when viewing a cat-parking spot)
+  const [selectedSlotId, setSelectedSlotId] = useState<string>('');
+  const [vehiclePlate, setVehiclePlate] = useState('AD-58291');
+  const [durationHours, setDurationHours] = useState(2);
+  const [reservingSlot, setReservingSlot] = useState(false);
+  const [parkingFeedback, setParkingFeedback] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+  const [activeParkingReservations, setActiveParkingReservations] = useState<
+    any[]
+  >([]);
 
   // Review & 4 Sub-Ratings state
   const [reviewRating, setReviewRating] = useState(5);
@@ -90,6 +125,23 @@ export default function PlaceAndDealDrawer({
       );
       setPlaceData(p);
 
+      if (p?.categoryId === 'cat-parking' || p?.parkingConfig) {
+        if (initialTab === 'parking') {
+          setActiveTab('parking');
+        }
+        try {
+          const detail = await apiFetch<any>(`/parking/places/${p.id}`);
+          if (detail) {
+            setPlaceData((prev: any) =>
+              prev ? { ...prev, parkingConfig: detail } : prev,
+            );
+            setActiveParkingReservations(detail.reservations || []);
+          }
+        } catch {
+          // ignore
+        }
+      }
+
       // Pre-fill if current user already has an editable review on this place
       const existingRev = p?.reviews?.find(
         (r: any) => r.userId === currentUser.id,
@@ -113,8 +165,70 @@ export default function PlaceAndDealDrawer({
   };
 
   useEffect(() => {
+    setActiveTab(initialTab);
     loadDetails();
-  }, [placeId, country, lang]);
+  }, [placeId, country, lang, initialTab]);
+
+  const handleReserveParkingSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!placeData?.id) return;
+    setReservingSlot(true);
+    setParkingFeedback(null);
+    try {
+      const res = await apiFetch<{
+        messageEn: string;
+        messageAr: string;
+        parkingConfig: any;
+      }>(`/parking/places/${placeData.id}/reserve`, {
+        method: 'POST',
+        body: JSON.stringify({
+          slotId: selectedSlotId || undefined,
+          userId: currentUser.id,
+          userName: currentUser.name || 'Wherio Member',
+          userPhone: currentUser.phone || '+971501234567',
+          vehiclePlate,
+          durationHours,
+        }),
+      });
+      setParkingFeedback({
+        type: 'success',
+        text: isAr ? res.messageAr : res.messageEn,
+      });
+      setSelectedSlotId('');
+      await loadDetails();
+      onParkingUpdated?.();
+    } catch (err: any) {
+      setParkingFeedback({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Reservation failed',
+      });
+    } finally {
+      setReservingSlot(false);
+    }
+  };
+
+  const handleParkingReservationAction = async (
+    reservationId: string,
+    action: 'check-in' | 'cancel',
+  ) => {
+    try {
+      const res = await apiFetch<{ messageEn: string; messageAr: string }>(
+        `/parking/reservations/${reservationId}/${action}`,
+        { method: 'POST' },
+      );
+      setParkingFeedback({
+        type: 'success',
+        text: isAr ? res.messageAr : res.messageEn,
+      });
+      await loadDetails();
+      onParkingUpdated?.();
+    } catch (err: any) {
+      setParkingFeedback({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Action failed',
+      });
+    }
+  };
 
   const handleSubmitVerifiedReview = async () => {
     if (!placeData || reviewComment.trim().length < 10) return;
@@ -378,9 +492,41 @@ export default function PlaceAndDealDrawer({
               )}
             </button>
           </div>
+
+          {/* Live Smart Parking Status Banner inside Header if Parking Spot */}
+          {placeData?.parkingConfig && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2">
+              <div className="flex items-center gap-2">
+                {placeData.parkingConfig.managementMode === 'CAMERA_AI' ? (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                    <Camera className="h-3 w-3" />
+                    {isAr ? 'كاميرا ذكية مباشر' : 'Camera AI Live'}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-amber-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                    <Wrench className="h-3 w-3" />
+                    {isAr ? 'إدارة يدوية' : 'Manual Mode'}
+                  </span>
+                )}
+                <span className="text-xs font-extrabold text-[#072549]">
+                  {placeData.parkingConfig.availableSlotsCount} /{' '}
+                  {placeData.parkingConfig.totalSlots}{' '}
+                  {isAr ? 'موقف متاح الآن' : 'Slots Free'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('parking')}
+                className="inline-flex items-center gap-1 rounded-lg bg-[#072549] px-2.5 py-1 text-[10px] font-extrabold text-white hover:bg-[#0c3566]"
+              >
+                <Car className="h-3 w-3 text-[#00D2B4]" />
+                {isAr ? 'عرض المواقف والحجز' : 'Live Slots & Reserve'}
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Wherio 3 Navigation Tabs */}
+        {/* Wherio Navigation Tabs */}
         <div className="sticky top-0 z-10 flex border-b border-slate-200 bg-white px-2 text-xs font-extrabold">
           <button
             onClick={() => setActiveTab('overview')}
@@ -392,6 +538,21 @@ export default function PlaceAndDealDrawer({
           >
             {isAr ? 'التجهيزات والمواعيد' : 'Facilities & Hours'}
           </button>
+          {placeData?.parkingConfig && (
+            <button
+              onClick={() => setActiveTab('parking')}
+              className={`flex-1 border-b-2 py-3 text-center transition ${
+                activeTab === 'parking'
+                  ? 'border-[#00B89C] text-[#072549]'
+                  : 'border-transparent text-slate-400'
+              }`}
+            >
+              <span className="inline-flex items-center justify-center gap-1">
+                <Car className="h-3.5 w-3.5 text-[#00B89C]" />
+                {isAr ? 'حجز موقف' : 'Slots & Reserve'}
+              </span>
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('media')}
             className={`flex-1 border-b-2 py-3 text-center transition ${
@@ -400,7 +561,7 @@ export default function PlaceAndDealDrawer({
                 : 'border-transparent text-slate-400'
             }`}
           >
-            {isAr ? 'صور المنيو والبوسترات' : 'Menus & Posters'}
+            {isAr ? 'المنيو والمتجر' : 'Menus & Posters'}
           </button>
           <button
             onClick={() => setActiveTab('reviews')}
@@ -670,9 +831,517 @@ export default function PlaceAndDealDrawer({
           </div>
         )}
 
-        {/* TAB 2: VIEW-ONLY MENU GALLERY & ANNOUNCED POSTERS */}
+        {/* TAB: SMART PARKING LIVE SLOTS & RESERVATION */}
+        {activeTab === 'parking' && placeData?.parkingConfig && (
+          <div className="space-y-3 p-4">
+            {parkingFeedback && (
+              <div
+                className={`flex items-center justify-between rounded-2xl border p-3 text-xs font-bold ${
+                  parkingFeedback.type === 'success'
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                    : 'border-rose-300 bg-rose-50 text-rose-900'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {parkingFeedback.type === 'success' ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+                  )}
+                  <span>{parkingFeedback.text}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setParkingFeedback(null)}
+                  className="text-[11px] underline"
+                >
+                  {isAr ? 'إغلاق' : 'Dismiss'}
+                </button>
+              </div>
+            )}
+
+            {/* Camera AI vs Manual Telemetry Card */}
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#072549] text-white shadow-sm">
+              <div className="flex items-center justify-between border-b border-white/10 px-3.5 py-2.5">
+                <div className="flex items-center gap-2">
+                  {placeData.parkingConfig.managementMode === 'CAMERA_AI' ? (
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/20 px-2 py-0.5 text-[10px] font-extrabold text-emerald-300">
+                      <Camera className="h-3.5 w-3.5" />
+                      {isAr
+                        ? 'رصد تلقائي بالكاميرا والذكاء الاصطناعي'
+                        : 'Camera AI Auto-Detection'}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-amber-500/20 px-2 py-0.5 text-[10px] font-extrabold text-amber-300">
+                      <Wrench className="h-3.5 w-3.5" />
+                      {isAr
+                        ? 'إدارة يدوية من مشرف المواقف'
+                        : 'Manual Operator Slot Control'}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={loadDetails}
+                  className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-1 text-[10px] font-bold text-slate-200 hover:bg-white/20"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  {isAr ? 'تحديث' : 'Sync'}
+                </button>
+              </div>
+
+              <div className="p-3.5">
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div className="rounded-xl bg-white/10 p-2">
+                    <span className="block text-[10px] text-slate-300">
+                      {isAr ? 'الإجمالي' : 'Total'}
+                    </span>
+                    <span className="text-base font-black text-white">
+                      {placeData.parkingConfig.totalSlots}
+                    </span>
+                  </div>
+                  <div className="rounded-xl bg-emerald-500/20 p-2">
+                    <span className="block text-[10px] text-emerald-300">
+                      {isAr ? 'متاح' : 'Available'}
+                    </span>
+                    <span className="text-base font-black text-emerald-300">
+                      {placeData.parkingConfig.availableSlotsCount}
+                    </span>
+                  </div>
+                  <div className="rounded-xl bg-amber-500/20 p-2">
+                    <span className="block text-[10px] text-amber-300">
+                      {isAr ? 'محجوز' : 'Reserved'}
+                    </span>
+                    <span className="text-base font-black text-amber-300">
+                      {placeData.parkingConfig.reservedSlotsCount}
+                    </span>
+                  </div>
+                  <div className="rounded-xl bg-rose-500/20 p-2">
+                    <span className="block text-[10px] text-rose-300">
+                      {isAr ? 'مشغول' : 'Occupied'}
+                    </span>
+                    <span className="text-base font-black text-rose-300">
+                      {placeData.parkingConfig.occupiedSlotsCount}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-300">
+                  <span>
+                    {isAr ? 'التعرفة:' : 'Rate:'}{' '}
+                    <strong className="text-white">
+                      {placeData.parkingConfig.hourlyRate === 0
+                        ? isAr
+                          ? 'مجاناً'
+                          : 'Free'
+                        : `${placeData.parkingConfig.hourlyRate} ${placeData.parkingConfig.currency} / hr`}
+                    </strong>
+                  </span>
+                  <span>
+                    {isAr ? 'مهلة الوصول للحجز:' : 'Arrival Grace Lock:'}{' '}
+                    <strong className="text-[#00D2B4]">
+                      {placeData.parkingConfig.gracePeriodMinutes || 15}{' '}
+                      {isAr ? 'دقيقة' : 'min'}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Slot Map Grid (Pure Vector Icons) */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-extrabold text-[#072549]">
+                  {isAr
+                    ? 'خريطة المواقف الحية (اختر موقفاً متاحاً للحجز):'
+                    : 'Live Parking Slot Grid (Tap an available slot to reserve):'}
+                </h3>
+                <span className="text-[10px] font-bold text-slate-400">
+                  {selectedSlotId
+                    ? isAr
+                      ? `المحدد: ${selectedSlotId}`
+                      : `Selected: ${selectedSlotId}`
+                    : isAr
+                      ? 'تعيين تلقائي أو اختر'
+                      : 'Auto or tap slot'}
+                </span>
+              </div>
+
+              <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {(placeData.parkingConfig.slots || []).map((slot: any) => {
+                  const isAvailable = slot.status === 'AVAILABLE';
+                  const isReserved = slot.status === 'RESERVED';
+                  const isOccupied = slot.status === 'OCCUPIED';
+                  const isSelected = selectedSlotId === slot.slotId;
+
+                  return (
+                    <button
+                      key={slot.slotId}
+                      type="button"
+                      disabled={!isAvailable}
+                      onClick={() =>
+                        setSelectedSlotId(
+                          isSelected ? '' : String(slot.slotId),
+                        )
+                      }
+                      className={`flex flex-col items-start justify-between rounded-xl border p-2 text-left transition ${
+                        isSelected
+                          ? 'border-[#0072DC] bg-[#0072DC]/10 ring-2 ring-[#0072DC]'
+                          : isAvailable
+                            ? 'border-emerald-200 bg-emerald-50/60 hover:border-emerald-400'
+                            : isReserved
+                              ? 'cursor-not-allowed border-amber-200 bg-amber-50/70 opacity-85'
+                              : 'cursor-not-allowed border-rose-200 bg-rose-50/60 opacity-75'
+                      }`}
+                    >
+                      <div className="flex w-full items-center justify-between">
+                        <span className="font-mono text-[11px] font-black text-[#072549]">
+                          #{slot.slotNumber}
+                        </span>
+                        {slot.type === 'EV_CHARGING' ? (
+                          <Zap className="h-3.5 w-3.5 text-emerald-600" />
+                        ) : slot.type === 'VIP' ? (
+                          <Crown className="h-3.5 w-3.5 text-amber-600" />
+                        ) : slot.type === 'ACCESSIBLE' ? (
+                          <Accessibility className="h-3.5 w-3.5 text-sky-600" />
+                        ) : isReserved ? (
+                          <Lock className="h-3.5 w-3.5 text-amber-600" />
+                        ) : (
+                          <Car
+                            className={`h-3.5 w-3.5 ${
+                              isAvailable
+                                ? 'text-emerald-600'
+                                : 'text-rose-600'
+                            }`}
+                          />
+                        )}
+                      </div>
+                      <span className="mt-1 font-mono text-[10px] font-bold text-slate-600">
+                        {slot.slotId}
+                      </span>
+                      <span
+                        className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-extrabold ${
+                          isAvailable
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : isReserved
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-rose-100 text-rose-800'
+                        }`}
+                      >
+                        {isAvailable
+                          ? isAr
+                            ? 'متاح'
+                            : 'FREE'
+                          : isReserved
+                            ? isAr
+                              ? 'محجوز'
+                              : 'RESERVED'
+                            : isAr
+                              ? 'مشغول'
+                              : 'OCCUPIED'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Apply for Parking Slot Reservation Form */}
+            <form
+              onSubmit={handleReserveParkingSlot}
+              className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xs"
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="flex items-center gap-1.5 text-xs font-extrabold text-[#072549]">
+                  <Lock className="h-3.5 w-3.5 text-[#00B89C]" />
+                  {isAr
+                    ? 'حجز موقف فوري (قفل الموقف لمدة ١٥ دقيقة للوصول)'
+                    : 'Reserve Parking Slot (15-Min Arrival Lock)'}
+                </h4>
+                {selectedSlotId && (
+                  <span className="rounded-lg bg-[#0072DC]/10 px-2 py-0.5 font-mono text-[10px] font-extrabold text-[#0072DC]">
+                    {selectedSlotId}
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500">
+                    {isAr ? 'رقم لوحة المركبة' : 'Vehicle Plate Number'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={vehiclePlate}
+                    onChange={(e) => setVehiclePlate(e.target.value)}
+                    placeholder="AD-58291"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500">
+                    {isAr ? 'مدة الوقوف (ساعات)' : 'Duration (Hours)'}
+                  </label>
+                  <select
+                    value={durationHours}
+                    onChange={(e) => setDurationHours(Number(e.target.value))}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800"
+                  >
+                    {[1, 2, 3, 4, 6, 8].map((h) => (
+                      <option key={h} value={h}>
+                        {h} {isAr ? 'ساعات' : 'Hours'} (
+                        {h * (placeData.parkingConfig.hourlyRate || 0)}{' '}
+                        {placeData.parkingConfig.currency})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={
+                  reservingSlot ||
+                  placeData.parkingConfig.availableSlotsCount === 0
+                }
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#072549] to-[#0072DC] py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
+              >
+                <Car className="h-4 w-4 text-[#00D2B4]" />
+                <span>
+                  {reservingSlot
+                    ? isAr
+                      ? 'جاري قفل وتأكيد الموقف...'
+                      : 'Locking & Reserving Slot...'
+                    : selectedSlotId
+                      ? isAr
+                        ? `تأكيد حجز الموقف ${selectedSlotId}`
+                        : `Confirm Reservation for Slot ${selectedSlotId}`
+                      : isAr
+                        ? 'حجز أقرب موقف متاح تلقائياً'
+                        : 'Auto-Assign & Reserve Best Available Slot'}
+                </span>
+              </button>
+            </form>
+
+            {/* Active Reservations for this Parking Spot */}
+            {activeParkingReservations.filter((r) => r.status === 'RESERVED')
+              .length > 0 && (
+              <div className="space-y-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5">
+                <h4 className="text-xs font-extrabold text-amber-950">
+                  {isAr
+                    ? 'الحجوزات النشطة في هذا الموقف (تسجيل وصول / إلغاء):'
+                    : 'Active Slot Reservations (Check-In on Arrival or Cancel):'}
+                </h4>
+                {activeParkingReservations
+                  .filter((r) => r.status === 'RESERVED')
+                  .map((res) => (
+                    <div
+                      key={res.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-white p-2.5 text-xs"
+                    >
+                      <div>
+                        <span className="font-mono font-black text-[#072549]">
+                          {res.slotId}
+                        </span>{' '}
+                        <span className="text-slate-600">
+                          • {res.vehiclePlate} ({res.userName})
+                        </span>
+                        <p className="text-[10px] text-amber-700">
+                          {isAr ? 'ينتهي قفل الوصول:' : 'Grace lock expires:'}{' '}
+                          {new Date(res.graceExpiresAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleParkingReservationAction(res.id, 'check-in')
+                          }
+                          className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[10px] font-extrabold text-white hover:bg-emerald-700"
+                        >
+                          {isAr ? 'تسجيل دخول المركبة' : 'Check-In'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleParkingReservationAction(res.id, 'cancel')
+                          }
+                          className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-100"
+                        >
+                          {isAr ? 'إلغاء' : 'Cancel'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: ORDERABLE STORE/MENU ITEMS + MENU GALLERY & ANNOUNCED POSTERS */}
         {activeTab === 'media' && placeData && (
           <div className="space-y-3 p-4">
+            {/* Orderable Menu & Store Items (Integrated directly inside Menus & Posters) */}
+            {Array.isArray(placeData.catalogProducts) &&
+              placeData.catalogProducts.length > 0 && (
+                <div className="rounded-2xl border border-[#0072DC]/25 bg-white p-3.5 shadow-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0072DC]/10 text-[#0072DC]">
+                        <ShoppingBag className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-extrabold text-[#072549]">
+                          {isAr
+                            ? 'قائمة الطلب المباشر والمتجر الإلكتروني'
+                            : 'Orderable Menu & Store Items'}
+                        </h3>
+                        <p className="text-[10px] text-slate-500">
+                          {isAr
+                            ? 'أضف المنتجات للسلة الموحدة في أعلى التطبيق مع حساب سعة مركبة التوصيل'
+                            : 'Add items to the global header cart with 3D delivery vehicle sizing'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {onOpenCart && (
+                      <button
+                        type="button"
+                        onClick={onOpenCart}
+                        className="inline-flex items-center gap-1 rounded-xl bg-[#072549] px-2.5 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#0d386b]"
+                      >
+                        <ShoppingBag className="h-3 w-3 text-[#00D2B4]" />
+                        <span>
+                          {isAr ? 'عرض السلة' : 'Open Cart'} (
+                          {cart.reduce((s, i) => s + i.quantity, 0)})
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-3 space-y-2.5">
+                    {placeData.catalogProducts.map((prod: any) => {
+                      const inCart = cart.find(
+                        (c) => c.productId === prod.id,
+                      );
+                      const qty = inCart?.quantity || 0;
+                      const cartItemPayload: GlobalCartItem = {
+                        productId: prod.id,
+                        placeId: placeData.id,
+                        placeNameEn: placeData.nameEn || placeData.name,
+                        placeNameAr: placeData.nameAr || placeData.name,
+                        nameEn: prod.nameEn,
+                        nameAr: prod.nameAr,
+                        price: prod.price,
+                        currency: prod.currency,
+                        imageUrl: prod.imageUrl,
+                        dimensionsCm: prod.dimensionsCm,
+                        weightKg: prod.weightKg,
+                        handlingFlags: prod.handlingFlags,
+                        quantity: qty,
+                      };
+
+                      return (
+                        <div
+                          key={prod.id}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 transition hover:border-[#0072DC]/30 hover:bg-white"
+                        >
+                          {prod.imageUrl && (
+                            <img
+                              src={prod.imageUrl}
+                              alt={isAr ? prod.nameAr : prod.nameEn}
+                              className="h-16 w-16 shrink-0 rounded-xl object-cover"
+                            />
+                          )}
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="rounded bg-[#0072DC]/10 px-1.5 py-0.5 text-[9px] font-extrabold text-[#0072DC]">
+                                {prod.categoryTag}
+                              </span>
+                              {prod.dimensionsCm?.length > 45 && (
+                                <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">
+                                  <Car className="h-2.5 w-2.5" />
+                                  {isAr ? 'يتطلب سيارة' : 'Car Trunk'}
+                                </span>
+                              )}
+                            </div>
+
+                            <h4 className="mt-1 truncate text-xs font-extrabold text-[#072549]">
+                              {isAr ? prod.nameAr : prod.nameEn}
+                            </h4>
+                            <p className="line-clamp-1 text-[10px] text-slate-500">
+                              {isAr ? prod.descriptionAr : prod.descriptionEn}
+                            </p>
+
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-slate-500">
+                              <span className="inline-flex items-center gap-0.5 font-medium">
+                                <Box className="h-3 w-3 text-slate-400" />
+                                {prod.dimensionsCm?.length}×
+                                {prod.dimensionsCm?.width}×
+                                {prod.dimensionsCm?.height} cm
+                              </span>
+                              <span className="inline-flex items-center gap-0.5 font-medium">
+                                <Scale className="h-3 w-3 text-slate-400" />
+                                {prod.weightKg} kg
+                              </span>
+                              <span className="font-black text-[#0072DC]">
+                                {prod.price} {prod.currency}
+                              </span>
+                            </div>
+                          </div>
+
+                          {onUpdateCartItem && (
+                            <div className="shrink-0">
+                              {qty === 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onUpdateCartItem(cartItemPayload, 1)
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-xl bg-[#0072DC] px-3 py-2 text-[11px] font-extrabold text-white shadow-2xs transition hover:bg-[#005bb5] active:scale-95"
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                  <span>{isAr ? 'أضف' : 'Add'}</span>
+                                </button>
+                              ) : (
+                                <div className="flex items-center gap-1 rounded-xl border border-[#0072DC]/30 bg-white p-1 shadow-2xs">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      onUpdateCartItem(cartItemPayload, -1)
+                                    }
+                                    className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </button>
+                                  <span className="min-w-[20px] text-center text-xs font-black text-[#072549]">
+                                    {qty}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      onUpdateCartItem(cartItemPayload, 1)
+                                    }
+                                    className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#072549] text-white hover:bg-[#0d386b]"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
             {/* Cinema Scope Notice if category is Cinemas */}
             {placeData.categoryId === 'cat-cinemas' && (
               <div className="rounded-2xl border border-sky-200 bg-sky-50 p-3 text-xs text-[#072549]">
