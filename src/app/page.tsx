@@ -34,6 +34,7 @@ import {
   RefreshCw,
   KeyRound,
   Compass,
+  ShoppingBag,
 } from 'lucide-react';
 import {
   AwfarApi,
@@ -45,6 +46,7 @@ import {
 import AiConciergeTab from '@/components/AiConciergeTab';
 import PlaceAndDealDrawer from '@/components/PlaceAndDealDrawer';
 import OnboardingFlow, { OnboardingStep } from '@/components/OnboardingFlow';
+import SmartParkingAndStoreHub from '@/components/SmartParkingAndStoreHub';
 import {
   WherioBrandLogo,
   RegionSelectDropdown,
@@ -103,7 +105,7 @@ export default function WherioCustomerWebApp() {
   const [selectedCityId, setSelectedCityId] = useState<string>('abudhabi');
   const [lang, setLang] = useState<LangCode>('en');
   const [activeBottomTab, setActiveBottomTab] = useState<
-    'explore' | 'search' | 'ai' | 'favorites' | 'account'
+    'explore' | 'search' | 'parking' | 'store' | 'ai' | 'favorites' | 'account'
   >('explore');
 
   const isAr = lang === 'ar';
@@ -1867,11 +1869,22 @@ export default function WherioCustomerWebApp() {
               </a>
             </div>
           )}
+
+          {(activeBottomTab === 'parking' || activeBottomTab === 'store') && (
+            <div className="p-4">
+              <SmartParkingAndStoreHub
+                mode={activeBottomTab}
+                cityId={selectedCityId}
+                isAr={isAr}
+                currentUser={currentUser}
+              />
+            </div>
+          )}
         </main>
 
         {/* REGISTRATION / LOGIN GATE MODAL */}
         {showAuthGateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs">
             <div
               dir={isAr ? 'rtl' : 'ltr'}
               className="w-full max-w-[390px] rounded-2xl bg-white p-5 shadow-2xl"
@@ -1954,38 +1967,44 @@ export default function WherioCustomerWebApp() {
           />
         )}
 
-        {/* BOTTOM NAVIGATION BAR (5 Pure Wherio Tabs — Zero E-Commerce/Cart) */}
+        {/* BOTTOM NAVIGATION BAR */}
         <nav className="fixed bottom-0 z-30 flex w-full max-w-[430px] items-center justify-around border-t border-slate-200 bg-white/95 py-2 backdrop-blur-md">
           {[
             {
               id: 'explore',
               labelEn: 'Explore',
               labelAr: 'استكشف',
-              icon: <Home className="h-5 w-5" />,
+              icon: <Home className="h-4 w-4" />,
             },
             {
-              id: 'search',
-              labelEn: 'Filters',
-              labelAr: 'الفلاتر',
-              icon: <SlidersHorizontal className="h-5 w-5" />,
+              id: 'parking',
+              labelEn: 'Parking',
+              labelAr: 'المواقف',
+              icon: <Car className="h-4 w-4" />,
+            },
+            {
+              id: 'store',
+              labelEn: 'Store & Cart',
+              labelAr: 'المتجر',
+              icon: <ShoppingBag className="h-4 w-4" />,
             },
             {
               id: 'ai',
               labelEn: 'AI Concierge',
-              labelAr: 'المساعد الذكي',
-              icon: <Sparkles className="h-5 w-5" />,
+              labelAr: 'المساعد',
+              icon: <Sparkles className="h-4 w-4" />,
             },
             {
               id: 'favorites',
-              labelEn: 'Favorites',
+              labelEn: 'Saved',
               labelAr: 'المفضلة',
-              icon: <Heart className="h-5 w-5" />,
+              icon: <Heart className="h-4 w-4" />,
             },
             {
               id: 'account',
               labelEn: 'Account',
               labelAr: 'حسابي',
-              icon: <User className="h-5 w-5" />,
+              icon: <User className="h-4 w-4" />,
             },
           ].map((tab) => {
             const active = activeBottomTab === tab.id;
