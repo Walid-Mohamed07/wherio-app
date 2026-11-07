@@ -344,6 +344,60 @@ export default function GlobalCartDrawer({
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
+  const fallbackVolumeCm3 = cart.reduce(
+    (sum, item) =>
+      sum +
+      (item.dimensionsCm?.length || 25) *
+        (item.dimensionsCm?.width || 20) *
+        (item.dimensionsCm?.height || 15) *
+        item.quantity,
+    0,
+  );
+  const fallbackWeightKg = Number(
+    cart
+      .reduce((sum, item) => sum + (item.weightKg || 0.5) * item.quantity, 0)
+      .toFixed(2),
+  );
+  const hasOversizedItemForMoto = cart.some((item) => {
+    const dim = item.dimensionsCm || { length: 25, width: 20, height: 15 };
+    return Math.max(dim.length, dim.width, dim.height) > 45;
+  });
+  const fallbackFitsMoto =
+    !hasOversizedItemForMoto &&
+    fallbackVolumeCm3 <= 72900 &&
+    fallbackWeightKg <= 18;
+  const fallbackFitsCar =
+    fallbackVolumeCm3 <= 389500 && fallbackWeightKg <= 120;
+  const fallbackVehicleType: 'MOTORCYCLE' | 'CAR' | 'MULTI_VEHICLE' =
+    fallbackFitsMoto
+      ? 'MOTORCYCLE'
+      : fallbackFitsCar
+        ? 'CAR'
+        : 'MULTI_VEHICLE';
+
+  const vehicleOpt = preview?.vehicleOptimization || {
+    recommendedVehicleType: fallbackVehicleType,
+    vehiclesRequiredCount: fallbackVehicleType === 'MULTI_VEHICLE' ? 2 : 1,
+    fitsSingleMotorcycle: fallbackFitsMoto,
+    fitsSingleCar: fallbackFitsCar,
+    totalVolumeCm3: fallbackVolumeCm3,
+    totalWeightKg: fallbackWeightKg,
+    motorcycleVolumeUtilizationPct: Math.min(
+      999,
+      Math.round((fallbackVolumeCm3 / 72900) * 100),
+    ),
+    carVolumeUtilizationPct: Math.min(
+      999,
+      Math.round((fallbackVolumeCm3 / 389500) * 100),
+    ),
+    reasonEn: fallbackFitsMoto
+      ? `Fits inside 1 Motorcycle Delivery Box (${fallbackVolumeCm3.toLocaleString()}/72,900 cm³, ${fallbackWeightKg}/18 kg).`
+      : `Upgraded to Car Trunk: ${hasOversizedItemForMoto ? 'Item exceeds 45 cm motorcycle box limit' : 'Volume/weight exceeds motorcycle payload'}.`,
+    reasonAr: fallbackFitsMoto
+      ? `يناسب صندوق دراجة نارية واحدة (${fallbackVolumeCm3.toLocaleString()}/72,900 سم³، ${fallbackWeightKg}/18 كجم).`
+      : `تم التوجيه لسيارة توصيل بسبب أبعاد أو حجم المنتجات.`,
+  };
+
   const currency = cart[0]?.currency || preview?.currency || 'AED';
 
   // Group cart items by merchant placeId
@@ -669,107 +723,95 @@ export default function GlobalCartDrawer({
                 </div>
 
                 {/* Live 3D Delivery Vehicle Box Fit Card (Pure Vector Icons) */}
-                {preview && (
-                  <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-950 via-[#072549] to-slate-900 p-3.5 text-white shadow-md">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-[#00D2B4]">
-                          {preview.vehicleOptimization
-                            .recommendedVehicleType === 'MOTORCYCLE' ? (
-                            <MotorcycleDeliveryVectorIcon className="h-5 w-5" />
-                          ) : (
-                            <CarTrunkVectorIcon className="h-5 w-5" />
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">
-                            {isAr
-                              ? 'تحليل سعة مركبة التوصيل ثلاثي الأبعاد'
-                              : '3D Delivery Vehicle Box Fit'}
-                          </span>
-                          <h4 className="text-xs font-black text-white">
-                            {preview.vehicleOptimization
-                              .recommendedVehicleType === 'MOTORCYCLE'
+                <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-950 via-[#072549] to-slate-900 p-3.5 text-white shadow-md">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-[#00D2B4]">
+                        {vehicleOpt.recommendedVehicleType === 'MOTORCYCLE' ? (
+                          <MotorcycleDeliveryVectorIcon className="h-5 w-5" />
+                        ) : (
+                          <CarTrunkVectorIcon className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">
+                          {isAr
+                            ? 'تحليل سعة مركبة التوصيل ثلاثي الأبعاد'
+                            : '3D Delivery Vehicle Box Fit'}
+                        </span>
+                        <h4 className="text-xs font-black text-white">
+                          {vehicleOpt.recommendedVehicleType === 'MOTORCYCLE'
+                            ? isAr
+                              ? 'صندوق دراجة نارية واحدة (45×45×45 سم)'
+                              : '1× Motorcycle Top-Box (45×45×45 cm)'
+                            : vehicleOpt.recommendedVehicleType === 'CAR'
                               ? isAr
-                                ? 'صندوق دراجة نارية واحدة (45×45×45 سم)'
-                                : '1× Motorcycle Top-Box (45×45×45 cm)'
-                              : preview.vehicleOptimization
-                                    .recommendedVehicleType === 'CAR'
-                                ? isAr
-                                  ? 'صندوق سيارة توصيل (100×95×50 سم)'
-                                  : '1× Car Trunk Cargo (100×95×50 cm)'
-                                : isAr
-                                  ? `${preview.vehicleOptimization.vehiclesRequiredCount}× مركبات توصيل`
-                                  : `${preview.vehicleOptimization.vehiclesRequiredCount}× Split Delivery Vehicles`}
-                          </h4>
-                        </div>
-                      </div>
-                      <span className="rounded-full bg-[#00B89C]/20 px-2.5 py-1 text-[10px] font-extrabold text-[#00D2B4]">
-                        {previewLoading
-                          ? '...'
-                          : `${preview.vehicleOptimization.totalWeightKg} kg`}
-                      </span>
-                    </div>
-
-                    {/* Volume & Utilization Bars */}
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <div className="rounded-xl bg-white/10 p-2">
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="inline-flex items-center gap-1 font-bold text-slate-200">
-                            <MotorcycleDeliveryVectorIcon className="h-3.5 w-3.5 text-[#00D2B4]" />
-                            {isAr ? 'سعة الدراجة' : 'Moto Box'}
-                          </span>
-                          <span className="font-extrabold">
-                            {
-                              preview.vehicleOptimization
-                                .motorcycleVolumeUtilizationPct
-                            }
-                            %
-                          </span>
-                        </div>
-                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              preview.vehicleOptimization.fitsSingleMotorcycle
-                                ? 'bg-emerald-400'
-                                : 'bg-rose-400'
-                            }`}
-                            style={{
-                              width: `${Math.min(100, preview.vehicleOptimization.motorcycleVolumeUtilizationPct)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="rounded-xl bg-white/10 p-2">
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="inline-flex items-center gap-1 font-bold text-slate-200">
-                            <CarTrunkVectorIcon className="h-3.5 w-3.5 text-amber-300" />
-                            {isAr ? 'صندوق السيارة' : 'Car Trunk'}
-                          </span>
-                          <span className="font-extrabold">
-                            {preview.vehicleOptimization.carVolumeUtilizationPct}
-                            %
-                          </span>
-                        </div>
-                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                          <div
-                            className="h-full rounded-full bg-amber-400 transition-all"
-                            style={{
-                              width: `${Math.min(100, preview.vehicleOptimization.carVolumeUtilizationPct)}%`,
-                            }}
-                          />
-                        </div>
+                                ? 'صندوق سيارة توصيل (100×95×50 سم)'
+                                : '1× Car Trunk Cargo (100×95×50 cm)'
+                              : isAr
+                                ? `${vehicleOpt.vehiclesRequiredCount || 2}× مركبات توصيل`
+                                : `${vehicleOpt.vehiclesRequiredCount || 2}× Split Delivery Vehicles`}
+                        </h4>
                       </div>
                     </div>
-
-                    <p className="mt-2.5 text-[11px] leading-relaxed text-indigo-100">
-                      {isAr
-                        ? preview.vehicleOptimization.reasonAr
-                        : preview.vehicleOptimization.reasonEn}
-                    </p>
+                    <span className="rounded-full bg-[#00B89C]/20 px-2.5 py-1 text-[10px] font-extrabold text-[#00D2B4]">
+                      {previewLoading
+                        ? '...'
+                        : `${vehicleOpt.totalWeightKg} kg`}
+                    </span>
                   </div>
-                )}
+
+                  {/* Volume & Utilization Bars */}
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-xl bg-white/10 p-2">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="inline-flex items-center gap-1 font-bold text-slate-200">
+                          <MotorcycleDeliveryVectorIcon className="h-3.5 w-3.5 text-[#00D2B4]" />
+                          {isAr ? 'سعة الدراجة' : 'Moto Box'}
+                        </span>
+                        <span className="font-extrabold">
+                          {vehicleOpt.motorcycleVolumeUtilizationPct}%
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            vehicleOpt.fitsSingleMotorcycle
+                              ? 'bg-emerald-400'
+                              : 'bg-rose-400'
+                          }`}
+                          style={{
+                            width: `${Math.min(100, vehicleOpt.motorcycleVolumeUtilizationPct)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-white/10 p-2">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="inline-flex items-center gap-1 font-bold text-slate-200">
+                          <CarTrunkVectorIcon className="h-3.5 w-3.5 text-amber-300" />
+                          {isAr ? 'صندوق السيارة' : 'Car Trunk'}
+                        </span>
+                        <span className="font-extrabold">
+                          {vehicleOpt.carVolumeUtilizationPct}%
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-amber-400 transition-all"
+                          style={{
+                            width: `${Math.min(100, vehicleOpt.carVolumeUtilizationPct)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="mt-2.5 text-[11px] leading-relaxed text-indigo-100">
+                    {isAr ? vehicleOpt.reasonAr : vehicleOpt.reasonEn}
+                  </p>
+                </div>
 
                 {/* Test-Mode Checkout Form */}
                 <form
@@ -929,20 +971,26 @@ export default function GlobalCartDrawer({
                           • {order.deliveryAddress}
                         </p>
                       </div>
-                      {renderOrderStateBadge(order.lifecycleState)}
+                      {renderOrderStateBadge(
+                        order.lifecycleState ||
+                          (order as any).state ||
+                          'CONFIRMED_TEST_MODE',
+                      )}
                     </div>
 
                     {/* Vehicle Fit Summary */}
                     <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-[11px]">
                       <div className="flex items-center gap-2 font-bold text-slate-700">
-                        {order.vehicleRequirement.recommendedVehicleType ===
+                        {(order.vehicleRequirement?.recommendedVehicleType ||
+                          (order as any).recommendedSingleOrderVehicle) ===
                         'MOTORCYCLE' ? (
                           <MotorcycleDeliveryVectorIcon className="h-4 w-4 text-[#0072DC]" />
                         ) : (
                           <CarTrunkVectorIcon className="h-4 w-4 text-amber-600" />
                         )}
                         <span>
-                          {order.vehicleRequirement.recommendedVehicleType ===
+                          {(order.vehicleRequirement?.recommendedVehicleType ||
+                            (order as any).recommendedSingleOrderVehicle) ===
                           'MOTORCYCLE'
                             ? isAr
                               ? 'دراجة نارية (45×45×45 سم)'
@@ -953,7 +1001,10 @@ export default function GlobalCartDrawer({
                         </span>
                       </div>
                       <span className="font-extrabold text-[#072549]">
-                        {order.grandTotal} {order.currency}
+                        {order.grandTotal ??
+                          (order as any).totalAmount ??
+                          order.subtotal}{' '}
+                        {order.currency}
                       </span>
                     </div>
 
