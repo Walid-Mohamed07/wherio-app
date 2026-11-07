@@ -210,11 +210,19 @@ export default function PlaceAndDealDrawer({
   const handleParkingReservationAction = async (
     reservationId: string,
     action: 'check-in' | 'cancel',
+    meta?: { slotId?: string; vehiclePlate?: string },
   ) => {
     try {
       const res = await apiFetch<{ messageEn: string; messageAr: string }>(
         `/parking/reservations/${reservationId}/${action}`,
-        { method: 'POST' },
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            placeId: placeData?.id,
+            slotId: meta?.slotId,
+            vehiclePlate: meta?.vehiclePlate,
+          }),
+        },
       );
       setParkingFeedback({
         type: 'success',
@@ -1159,7 +1167,10 @@ export default function PlaceAndDealDrawer({
                         <button
                           type="button"
                           onClick={() =>
-                            handleParkingReservationAction(res.id, 'check-in')
+                            handleParkingReservationAction(res.id, 'check-in', {
+                              slotId: res.slotId,
+                              vehiclePlate: res.vehiclePlate,
+                            })
                           }
                           className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[10px] font-extrabold text-white hover:bg-emerald-700"
                         >
@@ -1168,7 +1179,10 @@ export default function PlaceAndDealDrawer({
                         <button
                           type="button"
                           onClick={() =>
-                            handleParkingReservationAction(res.id, 'cancel')
+                            handleParkingReservationAction(res.id, 'cancel', {
+                              slotId: res.slotId,
+                              vehiclePlate: res.vehiclePlate,
+                            })
                           }
                           className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-100"
                         >
