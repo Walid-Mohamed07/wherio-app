@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Search,
   Home,
@@ -37,26 +37,26 @@ import {
   ShoppingBag,
   Camera,
   Wrench,
-} from 'lucide-react';
+} from "lucide-react";
 import {
-  AwfarApi,
+  WherioApi,
   CountryCode,
   LangCode,
   getStoredSessionToken,
   setStoredSessionToken,
-} from '@/lib/api';
-import AiConciergeTab from '@/components/AiConciergeTab';
-import PlaceAndDealDrawer from '@/components/PlaceAndDealDrawer';
-import OnboardingFlow, { OnboardingStep } from '@/components/OnboardingFlow';
+} from "@/lib/api";
+import AiConciergeTab from "@/components/AiConciergeTab";
+import PlaceAndDealDrawer from "@/components/PlaceAndDealDrawer";
+import OnboardingFlow, { OnboardingStep } from "@/components/OnboardingFlow";
 import GlobalCartDrawer, {
   GlobalCartItem,
   HeaderCartButton,
-} from '@/components/GlobalCartDrawer';
+} from "@/components/GlobalCartDrawer";
 import {
   WherioBrandLogo,
   RegionSelectDropdown,
   LanguageSelectDropdown,
-} from '@/components/BrandLogoAndSelects';
+} from "@/components/BrandLogoAndSelects";
 
 const CITY_COORDS: Record<
   string,
@@ -69,51 +69,51 @@ const CITY_COORDS: Record<
   }
 > = {
   abudhabi: {
-    country: 'AE',
-    nameEn: 'Abu Dhabi (Yas & Saadiyat)',
-    nameAr: 'أبوظبي (جزيرة ياس والسعديات)',
+    country: "AE",
+    nameEn: "Abu Dhabi (Yas & Saadiyat)",
+    nameAr: "أبوظبي (جزيرة ياس والسعديات)",
     lat: 24.4539,
     lng: 54.3773,
   },
   riyadh: {
-    country: 'SA',
-    nameEn: 'Riyadh (Al Olaya & Hittin)',
-    nameAr: 'الرياض (العليا وحطين)',
+    country: "SA",
+    nameEn: "Riyadh (Al Olaya & Hittin)",
+    nameAr: "الرياض (العليا وحطين)",
     lat: 24.7136,
     lng: 46.6753,
   },
   dubai: {
-    country: 'AE',
-    nameEn: 'Dubai (Downtown)',
-    nameAr: 'دبي (وسط المدينة)',
+    country: "AE",
+    nameEn: "Dubai (Downtown)",
+    nameAr: "دبي (وسط المدينة)",
     lat: 25.2048,
     lng: 55.2708,
   },
   jeddah: {
-    country: 'SA',
-    nameEn: 'Jeddah (Corniche)',
-    nameAr: 'جدة (الكورنيش)',
+    country: "SA",
+    nameEn: "Jeddah (Corniche)",
+    nameAr: "جدة (الكورنيش)",
     lat: 21.5433,
     lng: 39.1728,
   },
   cairo: {
-    country: 'EG',
-    nameEn: 'Cairo (New Cairo)',
-    nameAr: 'القاهرة (التجمع الخامس)',
+    country: "EG",
+    nameEn: "Cairo (New Cairo)",
+    nameAr: "القاهرة (التجمع الخامس)",
     lat: 30.0444,
     lng: 31.2357,
   },
 };
 
 export default function WherioCustomerWebApp() {
-  const [country, setCountry] = useState<CountryCode>('AE');
-  const [selectedCityId, setSelectedCityId] = useState<string>('abudhabi');
-  const [lang, setLang] = useState<LangCode>('en');
+  const [country, setCountry] = useState<CountryCode>("AE");
+  const [selectedCityId, setSelectedCityId] = useState<string>("abudhabi");
+  const [lang, setLang] = useState<LangCode>("en");
   const [activeBottomTab, setActiveBottomTab] = useState<
-    'explore' | 'search' | 'ai' | 'favorites' | 'account'
-  >('explore');
+    "explore" | "search" | "ai" | "favorites" | "account"
+  >("explore");
 
-  const isAr = lang === 'ar';
+  const isAr = lang === "ar";
 
   // Directory & Geo Metadata States
   const [countriesData, setCountriesData] = useState<any[]>([]);
@@ -132,22 +132,22 @@ export default function WherioCustomerWebApp() {
   const [gpsStatusText, setGpsStatusText] = useState<string | null>(null);
 
   // Compound Filters State
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string>('');
-  const [selectedAreaId, setSelectedAreaId] = useState<string>('');
-  const [keyword, setKeyword] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
+  const [selectedAreaId, setSelectedAreaId] = useState<string>("");
+  const [keyword, setKeyword] = useState<string>("");
   const [activeAttributeFilters, setActiveAttributeFilters] = useState<
     string[]
   >([]);
   const [sortBy, setSortBy] = useState<
-    'relevance' | 'distance' | 'rating' | 'completeness'
-  >('relevance');
+    "relevance" | "distance" | "rating" | "completeness"
+  >("relevance");
 
   // Selected Place Drawer & Initial Tab
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [selectedPlaceInitialTab, setSelectedPlaceInitialTab] = useState<
-    'overview' | 'parking' | 'media' | 'reviews'
-  >('overview');
+    "overview" | "parking" | "media" | "reviews"
+  >("overview");
 
   // Global Unified Cart State & Header Pulse Animation
   const [cart, setCart] = useState<GlobalCartItem[]>([]);
@@ -183,7 +183,7 @@ export default function WherioCustomerWebApp() {
 
   // Onboarding & Session Check Flow (Splash -> Country -> Get Started Slides -> Login / Guest)
   const [onboardingStep, setOnboardingStep] =
-    useState<OnboardingStep>('splash');
+    useState<OnboardingStep>("splash");
 
   // Identity, Dual Verification & Registration Gate State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -193,36 +193,36 @@ export default function WherioCustomerWebApp() {
   >(null);
 
   const [currentUser, setCurrentUser] = useState({
-    id: '',
-    name: '',
-    phone: '',
-    email: '',
-    role: 'GUEST',
+    id: "",
+    name: "",
+    phone: "",
+    email: "",
+    role: "GUEST",
     isPhoneVerified: false,
     isEmailVerified: false,
   });
   const [favoritePlaceIds, setFavoritePlaceIds] = useState<string[]>([
-    'place-warner-bros-abudhabi',
-    'place-rain-cafe-abudhabi',
-    'place-elixir-bunn-riyadh',
+    "place-warner-bros-abudhabi",
+    "place-rain-cafe-abudhabi",
+    "place-elixir-bunn-riyadh",
   ]);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([
-    'cat-restaurants',
-    'cat-cafes',
+    "cat-restaurants",
+    "cat-cafes",
   ]);
   const [preferredAttributes, setPreferredAttributes] = useState<string[]>([
-    'kids_friendly',
-    'parking',
+    "kids_friendly",
+    "parking",
   ]);
   const [preferredPriceRange, setPreferredPriceRange] = useState<
-    'BUDGET' | 'MODERATE' | 'UPSCALE'
-  >('MODERATE');
+    "BUDGET" | "MODERATE" | "UPSCALE"
+  >("MODERATE");
 
   // OTP & Email Form States
-  const [phoneInput, setPhoneInput] = useState('+971504445566');
-  const [emailInput, setEmailInput] = useState('');
-  const [nameInput, setNameInput] = useState('');
-  const [otpInput, setOtpInput] = useState('');
+  const [phoneInput, setPhoneInput] = useState("+971504445566");
+  const [emailInput, setEmailInput] = useState("");
+  const [nameInput, setNameInput] = useState("");
+  const [otpInput, setOtpInput] = useState("");
   const [authStatusMsg, setAuthStatusMsg] = useState<string | null>(null);
 
   // Startup Splash Screen & Active Session Check
@@ -230,24 +230,26 @@ export default function WherioCustomerWebApp() {
     let mounted = true;
     const verifyStartupSession = async () => {
       const savedCountry =
-        typeof window !== 'undefined'
-          ? (window.localStorage.getItem('wherio_country') as CountryCode | null)
+        typeof window !== "undefined"
+          ? (window.localStorage.getItem(
+              "wherio_country",
+            ) as CountryCode | null)
           : null;
       const savedLang =
-        typeof window !== 'undefined'
-          ? (window.localStorage.getItem('wherio_lang') as LangCode | null)
+        typeof window !== "undefined"
+          ? (window.localStorage.getItem("wherio_lang") as LangCode | null)
           : null;
-      if (savedCountry && ['AE', 'SA', 'EG'].includes(savedCountry)) {
+      if (savedCountry && ["AE", "SA", "EG"].includes(savedCountry)) {
         setCountry(savedCountry);
         setSelectedCityId(
-          savedCountry === 'SA'
-            ? 'riyadh'
-            : savedCountry === 'EG'
-              ? 'cairo'
-              : 'abudhabi',
+          savedCountry === "SA"
+            ? "riyadh"
+            : savedCountry === "EG"
+              ? "cairo"
+              : "abudhabi",
         );
       }
-      if (savedLang && ['en', 'ar'].includes(savedLang)) {
+      if (savedLang && ["en", "ar"].includes(savedLang)) {
         setLang(savedLang);
       }
 
@@ -257,7 +259,7 @@ export default function WherioCustomerWebApp() {
 
       if (existingToken) {
         try {
-          const sessionRes = await AwfarApi.checkSession(savedCountry || 'AE');
+          const sessionRes = await WherioApi.checkSession(savedCountry || "AE");
           if (sessionRes?.authenticated && sessionRes?.user) {
             setCurrentUser({
               id: sessionRes.user.id,
@@ -268,11 +270,11 @@ export default function WherioCustomerWebApp() {
               isPhoneVerified: sessionRes.user.isPhoneVerified,
               isEmailVerified: sessionRes.user.isEmailVerified,
             });
-            setNameInput(sessionRes.user.name || '');
-            setPhoneInput(sessionRes.user.phone || '');
-            setEmailInput(sessionRes.user.email || '');
+            setNameInput(sessionRes.user.name || "");
+            setPhoneInput(sessionRes.user.phone || "");
+            setEmailInput(sessionRes.user.email || "");
             setIsAuthenticated(true);
-            setOnboardingStep('done');
+            setOnboardingStep("done");
             return;
           }
         } catch {
@@ -281,7 +283,7 @@ export default function WherioCustomerWebApp() {
       }
 
       // No active authenticated token -> start onboarding at Country Selection (Page 2 of PDF)
-      setOnboardingStep('country');
+      setOnboardingStep("country");
     };
 
     verifyStartupSession();
@@ -291,32 +293,32 @@ export default function WherioCustomerWebApp() {
   }, []);
 
   const currentCityMeta =
-    CITY_COORDS[selectedCityId] || CITY_COORDS['abudhabi'];
+    CITY_COORDS[selectedCityId] || CITY_COORDS["abudhabi"];
   const effectiveLat = customGpsCoords?.lat ?? currentCityMeta.lat;
   const effectiveLng = customGpsCoords?.lng ?? currentCityMeta.lng;
 
   // Sync country switcher with launch city
   const handleCountryChange = (nextCountry: CountryCode) => {
     setCountry(nextCountry);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('wherio_country', nextCountry);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("wherio_country", nextCountry);
     }
-    if (nextCountry === 'AE') {
-      setSelectedCityId('abudhabi');
-    } else if (nextCountry === 'SA') {
-      setSelectedCityId('riyadh');
+    if (nextCountry === "AE") {
+      setSelectedCityId("abudhabi");
+    } else if (nextCountry === "SA") {
+      setSelectedCityId("riyadh");
     } else {
-      setSelectedCityId('cairo');
+      setSelectedCityId("cairo");
     }
-    setSelectedAreaId('');
+    setSelectedAreaId("");
     setCustomGpsCoords(null);
   };
 
   // Request Browser GPS Location Permission with Automatic City Fallback
   const handleRequestGpsLocation = () => {
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
       setGpsStatusText(
-        isAr ? 'جاري تحديد موقعك الجغرافي...' : 'Detecting GPS location...',
+        isAr ? "جاري تحديد موقعك الجغرافي..." : "Detecting GPS location...",
       );
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -324,19 +326,19 @@ export default function WherioCustomerWebApp() {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
           });
-          setSortBy('distance');
+          setSortBy("distance");
           setGpsStatusText(
             isAr
-              ? 'تم تفعيل الموقع الجغرافي المباشر (GPS)'
-              : 'Live GPS location enabled',
+              ? "تم تفعيل الموقع الجغرافي المباشر (GPS)"
+              : "Live GPS location enabled",
           );
         },
         () => {
           setCustomGpsCoords(null);
           setGpsStatusText(
             isAr
-              ? 'تعذر الوصول لـ GPS — تم الاعتماد تلقائياً على مركز المدينة المختارة'
-              : 'GPS unavailable — automatically using selected city center',
+              ? "تعذر الوصول لـ GPS — تم الاعتماد تلقائياً على مركز المدينة المختارة"
+              : "GPS unavailable — automatically using selected city center",
           );
         },
         { timeout: 5000 },
@@ -344,18 +346,18 @@ export default function WherioCustomerWebApp() {
     } else {
       setGpsStatusText(
         isAr
-          ? 'يتم استخدام إحداثيات المدينة المختارة'
-          : 'Using selected city coordinates',
+          ? "يتم استخدام إحداثيات المدينة المختارة"
+          : "Using selected city coordinates",
       );
     }
   };
 
   // Load Countries, Active Cities & Categories
   useEffect(() => {
-    AwfarApi.getCountries(country, lang)
+    WherioApi.getCountries(country, lang)
       .then((res) => setCountriesData(res || []))
       .catch(console.error);
-    AwfarApi.getCategories(country, lang)
+    WherioApi.getCategories(country, lang)
       .then((res) => setCategories(res || []))
       .catch(console.error);
   }, [country, lang]);
@@ -364,7 +366,7 @@ export default function WherioCustomerWebApp() {
   const fetchPlaces = async () => {
     setLoading(true);
     try {
-      const res = await AwfarApi.getNearbyPlaces(
+      const res = await WherioApi.getNearbyPlaces(
         {
           lat: effectiveLat,
           lng: effectiveLng,
@@ -374,7 +376,7 @@ export default function WherioCustomerWebApp() {
           categoryId: selectedCategory || undefined,
           subCategoryId: selectedSubCategory || undefined,
           keyword: keyword.trim() || undefined,
-          amenities: activeAttributeFilters.join(','),
+          amenities: activeAttributeFilters.join(","),
           sortBy,
         },
         country,
@@ -417,7 +419,7 @@ export default function WherioCustomerWebApp() {
 
   const handleOpenPlaceDetails = (
     placeId: string,
-    tab: 'overview' | 'parking' | 'media' | 'reviews' = 'overview',
+    tab: "overview" | "parking" | "media" | "reviews" = "overview",
   ) => {
     setSelectedPlaceInitialTab(tab);
     setSelectedPlaceId(placeId);
@@ -431,7 +433,7 @@ export default function WherioCustomerWebApp() {
           : [...prev, placeId],
       );
       try {
-        await AwfarApi.toggleFavorite(currentUser.id, placeId, country);
+        await WherioApi.toggleFavorite(currentUser.id, placeId, country);
       } catch (e) {
         console.error(e);
       }
@@ -446,10 +448,10 @@ export default function WherioCustomerWebApp() {
 
   const handleVerifyOtpAndEmail = async () => {
     try {
-      const res = await AwfarApi.verifyOtp(
+      const res = await WherioApi.verifyOtp(
         phoneInput,
         otpInput,
-        nameInput || 'Wherio Member',
+        nameInput || "Wherio Member",
         country,
         emailInput || undefined,
       );
@@ -470,8 +472,8 @@ export default function WherioCustomerWebApp() {
         setShowAuthGateModal(false);
         setAuthStatusMsg(
           isAr
-            ? 'تم تسجيل الدخول وتوثيق الهاتف (OTP) والبريد الإلكتروني بنجاح!'
-            : 'Signed in with Verified Phone (OTP) + Verified Unique Email!',
+            ? "تم تسجيل الدخول وتوثيق الهاتف (OTP) والبريد الإلكتروني بنجاح!"
+            : "Signed in with Verified Phone (OTP) + Verified Unique Email!",
         );
         if (pendingActionAfterAuth) {
           pendingActionAfterAuth();
@@ -485,7 +487,7 @@ export default function WherioCustomerWebApp() {
 
   const handleVerifyEmailOnly = async () => {
     try {
-      const res = await AwfarApi.verifyEmail(
+      const res = await WherioApi.verifyEmail(
         currentUser.id,
         emailInput,
         country,
@@ -505,7 +507,7 @@ export default function WherioCustomerWebApp() {
 
   const handleResendVerification = async () => {
     try {
-      const res = await AwfarApi.resendVerification(
+      const res = await WherioApi.resendVerification(
         phoneInput || emailInput,
         country,
       );
@@ -517,7 +519,7 @@ export default function WherioCustomerWebApp() {
 
   const handleRecoverAccount = async () => {
     try {
-      const res = await AwfarApi.recoverAccount(
+      const res = await WherioApi.recoverAccount(
         phoneInput || emailInput,
         country,
       );
@@ -541,12 +543,12 @@ export default function WherioCustomerWebApp() {
 
   const handleSaveProfileAndPreferences = async () => {
     try {
-      const profRes = await AwfarApi.updateProfile(
+      const profRes = await WherioApi.updateProfile(
         currentUser.id,
         { name: nameInput, phone: phoneInput, email: emailInput },
         country,
       );
-      await AwfarApi.updatePreferences(
+      await WherioApi.updatePreferences(
         currentUser.id,
         {
           preferredLanguage: lang,
@@ -570,8 +572,8 @@ export default function WherioCustomerWebApp() {
       }
       setAuthStatusMsg(
         isAr
-          ? 'تم حفظ بيانات الملف الشخصي وتفضيلات اللغة والمدينة بنجاح.'
-          : 'Profile details, preferred language, and preferred city saved.',
+          ? "تم حفظ بيانات الملف الشخصي وتفضيلات اللغة والمدينة بنجاح."
+          : "Profile details, preferred language, and preferred city saved.",
       );
     } catch (err: any) {
       setAuthStatusMsg(err.message);
@@ -581,7 +583,7 @@ export default function WherioCustomerWebApp() {
   const handleLogoutSession = async () => {
     try {
       if (currentUser.id) {
-        await AwfarApi.logout(currentUser.id, country);
+        await WherioApi.logout(currentUser.id, country);
       }
     } catch (e) {
       console.error(e);
@@ -589,18 +591,18 @@ export default function WherioCustomerWebApp() {
     setStoredSessionToken(null);
     setIsAuthenticated(false);
     setCurrentUser({
-      id: '',
-      name: '',
-      phone: '',
-      email: '',
-      role: 'GUEST',
+      id: "",
+      name: "",
+      phone: "",
+      email: "",
+      role: "GUEST",
       isPhoneVerified: false,
       isEmailVerified: false,
     });
     setAuthStatusMsg(
       isAr
-        ? 'تم تسجيل الخروج بنجاح. أنت الآن في وضع الزائر.'
-        : 'Signed out cleanly. You are now browsing as a Guest.',
+        ? "تم تسجيل الخروج بنجاح. أنت الآن في وضع الزائر."
+        : "Signed out cleanly. You are now browsing as a Guest.",
     );
   };
 
@@ -612,14 +614,14 @@ export default function WherioCustomerWebApp() {
   const currentSubCategories = selectedCategoryObj?.subCategories || [];
 
   const getCategoryIcon = (catId: string) => {
-    if (catId === 'cat-restaurants') return <Utensils className="h-5 w-5" />;
-    if (catId === 'cat-cafes') return <Coffee className="h-5 w-5" />;
-    if (catId === 'cat-cinemas') return <Film className="h-5 w-5" />;
-    if (catId === 'cat-parking') return <Car className="h-5 w-5" />;
+    if (catId === "cat-restaurants") return <Utensils className="h-5 w-5" />;
+    if (catId === "cat-cafes") return <Coffee className="h-5 w-5" />;
+    if (catId === "cat-cinemas") return <Film className="h-5 w-5" />;
+    if (catId === "cat-parking") return <Car className="h-5 w-5" />;
     return <FerrisWheel className="h-5 w-5" />;
   };
 
-  if (onboardingStep !== 'done') {
+  if (onboardingStep !== "done") {
     return (
       <OnboardingFlow
         step={onboardingStep}
@@ -629,8 +631,8 @@ export default function WherioCustomerWebApp() {
         lang={lang}
         onSelectLang={(nextLang) => {
           setLang(nextLang);
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem('wherio_lang', nextLang);
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem("wherio_lang", nextLang);
           }
         }}
         countriesData={countriesData}
@@ -644,15 +646,15 @@ export default function WherioCustomerWebApp() {
             isPhoneVerified: user.isPhoneVerified,
             isEmailVerified: user.isEmailVerified,
           });
-          setNameInput(user.name || '');
-          setPhoneInput(user.phone || '');
-          setEmailInput(user.email || '');
+          setNameInput(user.name || "");
+          setPhoneInput(user.phone || "");
+          setEmailInput(user.email || "");
           setIsAuthenticated(true);
-          setOnboardingStep('done');
+          setOnboardingStep("done");
         }}
         onContinueAsGuest={() => {
           setIsAuthenticated(false);
-          setOnboardingStep('done');
+          setOnboardingStep("done");
         }}
       />
     );
@@ -662,7 +664,7 @@ export default function WherioCustomerWebApp() {
     <div className="min-h-screen bg-slate-900 flex justify-center">
       {/* Mobile-First Web App Frame */}
       <div
-        dir={isAr ? 'rtl' : 'ltr'}
+        dir={isAr ? "rtl" : "ltr"}
         className="relative flex min-h-screen w-full max-w-[430px] flex-col bg-slate-50 shadow-2xl"
       >
         {/* TOP STICKY BAR: Wherio Logo, Compact Country/Language Switchers & Global Cart SVG Button */}
@@ -696,26 +698,26 @@ export default function WherioCustomerWebApp() {
           <div className="mt-2.5 flex items-center justify-between gap-2 rounded-xl bg-[#072549]/5 px-2.5 py-1.5 text-[11px]">
             <div className="flex items-center gap-1.5 font-bold text-[#072549]">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-[#0072DC]" />
-              <span>{isAr ? 'المدينة:' : 'City:'}</span>
+              <span>{isAr ? "المدينة:" : "City:"}</span>
             </div>
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
               {[
                 {
-                  id: 'abudhabi',
-                  country: 'AE' as CountryCode,
-                  en: 'Abu Dhabi',
-                  ar: 'أبوظبي',
+                  id: "abudhabi",
+                  country: "AE" as CountryCode,
+                  en: "Abu Dhabi",
+                  ar: "أبوظبي",
                 },
                 {
-                  id: 'riyadh',
-                  country: 'SA' as CountryCode,
-                  en: 'Riyadh',
-                  ar: 'الرياض',
+                  id: "riyadh",
+                  country: "SA" as CountryCode,
+                  en: "Riyadh",
+                  ar: "الرياض",
                 },
                 ...allCities
                   .filter(
                     (c) =>
-                      c.isActive && c.id !== 'abudhabi' && c.id !== 'riyadh',
+                      c.isActive && c.id !== "abudhabi" && c.id !== "riyadh",
                   )
                   .map((c) => ({
                     id: c.id,
@@ -731,13 +733,13 @@ export default function WherioCustomerWebApp() {
                     onClick={() => {
                       setSelectedCityId(cityPill.id);
                       setCountry(cityPill.country);
-                      setSelectedAreaId('');
+                      setSelectedAreaId("");
                       setCustomGpsCoords(null);
                     }}
                     className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition ${
                       isSelected
-                        ? 'bg-[#072549] text-white shadow-2xs'
-                        : 'bg-white text-slate-600 hover:bg-slate-100'
+                        ? "bg-[#072549] text-white shadow-2xs"
+                        : "bg-white text-slate-600 hover:bg-slate-100"
                     }`}
                   >
                     {isAr ? cityPill.ar : cityPill.en}
@@ -749,10 +751,10 @@ export default function WherioCustomerWebApp() {
                 type="button"
                 onClick={handleRequestGpsLocation}
                 className="inline-flex items-center gap-1 rounded-lg bg-[#0072DC]/15 px-2 py-1 text-[10px] font-extrabold text-[#0072DC] hover:bg-[#0072DC] hover:text-white"
-                title={isAr ? 'استخدام موقعي الحالي' : 'Use My GPS Location'}
+                title={isAr ? "استخدام موقعي الحالي" : "Use My GPS Location"}
               >
                 <Navigation className="h-3 w-3" />
-                <span>{isAr ? 'موقعي' : 'Near Me'}</span>
+                <span>{isAr ? "موقعي" : "Near Me"}</span>
               </button>
             </div>
           </div>
@@ -769,7 +771,7 @@ export default function WherioCustomerWebApp() {
           {/* =========================================================
               TAB 1: EXPLORE (استكشف)
           ========================================================= */}
-          {activeBottomTab === 'explore' && (
+          {activeBottomTab === "explore" && (
             <div className="space-y-4">
               {/* Wherio Hero Banner */}
               <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#072549] via-[#0A2E5C] to-[#0072DC] p-4 text-white shadow-md">
@@ -778,37 +780,37 @@ export default function WherioCustomerWebApp() {
                     <Sparkles className="h-3 w-3" />
                     <span>
                       {isAr
-                        ? 'المرحلة الأولى — أبوظبي والرياض'
-                        : 'PHASE 1 LAUNCH — ABU DHABI & RIYADH'}
+                        ? "المرحلة الأولى — أبوظبي والرياض"
+                        : "PHASE 1 LAUNCH — ABU DHABI & RIYADH"}
                     </span>
                   </div>
                   <h1 className="mt-1.5 text-base font-extrabold leading-snug">
                     {isAr
-                      ? 'استكشف الأماكن بدقة • راجع التقييمات الموثقة • انطلق بثقة'
-                      : 'Explore Verified Places • Read Trusted Reviews • Go Confidently'}
+                      ? "استكشف الأماكن بدقة • راجع التقييمات الموثقة • انطلق بثقة"
+                      : "Explore Verified Places • Read Trusted Reviews • Go Confidently"}
                   </h1>
                   <p className="mt-1 text-[11px] text-sky-100/90 leading-relaxed">
                     {isAr
-                      ? 'دليل ذكي للمطاعم، المقاهي، السينما، والترفيه العائلي مع توضيح صريح للتجهيزات المتاحة أو غير المعروفة.'
-                      : 'Structured directory for Restaurants, Cafes, Cinemas & Entertainment with verified facilities and grounded AI.'}
+                      ? "دليل ذكي للمطاعم، المقاهي، السينما، والترفيه العائلي مع توضيح صريح للتجهيزات المتاحة أو غير المعروفة."
+                      : "Structured directory for Restaurants, Cafes, Cinemas & Entertainment with verified facilities and grounded AI."}
                   </p>
 
                   <div className="mt-3 flex gap-2">
                     <button
                       onClick={() =>
-                        requireAuthThen(() => setActiveBottomTab('ai'))
+                        requireAuthThen(() => setActiveBottomTab("ai"))
                       }
                       className="inline-flex items-center gap-1.5 rounded-xl bg-[#00B89C] px-3 py-2 text-xs font-extrabold text-white shadow-xs hover:bg-[#008891]"
                     >
                       <Sparkles className="h-3.5 w-3.5" />
-                      {isAr ? 'اسأل المساعد الذكي' : 'Ask AI Concierge'}
+                      {isAr ? "اسأل المساعد الذكي" : "Ask AI Concierge"}
                     </button>
                     <button
-                      onClick={() => setActiveBottomTab('search')}
+                      onClick={() => setActiveBottomTab("search")}
                       className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-2 text-xs font-bold text-white backdrop-blur hover:bg-white/25"
                     >
                       <SlidersHorizontal className="h-3.5 w-3.5" />
-                      {isAr ? 'الفلاتر المركبة' : 'Compound Filters'}
+                      {isAr ? "الفلاتر المركبة" : "Compound Filters"}
                     </button>
                   </div>
                 </div>
@@ -819,18 +821,18 @@ export default function WherioCustomerWebApp() {
                 <div className="mb-2 flex items-center justify-between">
                   <h2 className="text-xs font-extrabold text-[#072549]">
                     {isAr
-                      ? 'الفئات الرئيسية للاستكشاف:'
-                      : 'Explore by Main Category:'}
+                      ? "الفئات الرئيسية للاستكشاف:"
+                      : "Explore by Main Category:"}
                   </h2>
                   {selectedCategory && (
                     <button
                       onClick={() => {
-                        setSelectedCategory('');
-                        setSelectedSubCategory('');
+                        setSelectedCategory("");
+                        setSelectedSubCategory("");
                       }}
                       className="text-[11px] font-bold text-[#0072DC] underline"
                     >
-                      {isAr ? 'عرض الكل' : 'Show All'}
+                      {isAr ? "عرض الكل" : "Show All"}
                     </button>
                   )}
                 </div>
@@ -840,21 +842,25 @@ export default function WherioCustomerWebApp() {
                     ? categories
                     : [
                         {
-                          id: 'cat-restaurants',
-                          nameEn: 'Restaurants',
-                          nameAr: 'مطاعم',
+                          id: "cat-restaurants",
+                          nameEn: "Restaurants",
+                          nameAr: "مطاعم",
                         },
-                        { id: 'cat-cafes', nameEn: 'Cafes', nameAr: 'مقاهي' },
-                        { id: 'cat-cinemas', nameEn: 'Cinemas', nameAr: 'سينما' },
+                        { id: "cat-cafes", nameEn: "Cafes", nameAr: "مقاهي" },
                         {
-                          id: 'cat-entertainment',
-                          nameEn: 'Entertainment',
-                          nameAr: 'ترفيه وأنشطة',
+                          id: "cat-cinemas",
+                          nameEn: "Cinemas",
+                          nameAr: "سينما",
                         },
                         {
-                          id: 'cat-parking',
-                          nameEn: 'Parking Spots',
-                          nameAr: 'مواقف السيارات',
+                          id: "cat-entertainment",
+                          nameEn: "Entertainment",
+                          nameAr: "ترفيه وأنشطة",
+                        },
+                        {
+                          id: "cat-parking",
+                          nameEn: "Parking Spots",
+                          nameAr: "مواقف السيارات",
                         },
                       ]
                   ).map((cat: any) => {
@@ -863,20 +869,20 @@ export default function WherioCustomerWebApp() {
                       <button
                         key={cat.id}
                         onClick={() => {
-                          setSelectedCategory(active ? '' : cat.id);
-                          setSelectedSubCategory('');
+                          setSelectedCategory(active ? "" : cat.id);
+                          setSelectedSubCategory("");
                         }}
                         className={`flex flex-col items-center justify-center rounded-2xl border p-2.5 text-center transition ${
                           active
-                            ? 'border-[#0072DC] bg-[#072549] text-white shadow-sm'
-                            : 'border-slate-200 bg-white text-[#072549] hover:border-[#0072DC]'
+                            ? "border-[#0072DC] bg-[#072549] text-white shadow-sm"
+                            : "border-slate-200 bg-white text-[#072549] hover:border-[#0072DC]"
                         }`}
                       >
                         <div
                           className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                             active
-                              ? 'bg-[#00B89C] text-white'
-                              : 'bg-[#0072DC]/10 text-[#0072DC]'
+                              ? "bg-[#00B89C] text-white"
+                              : "bg-[#0072DC]/10 text-[#0072DC]"
                           }`}
                         >
                           {getCategoryIcon(cat.id)}
@@ -893,27 +899,27 @@ export default function WherioCustomerWebApp() {
                 {currentSubCategories.length > 0 && (
                   <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
                     <button
-                      onClick={() => setSelectedSubCategory('')}
+                      onClick={() => setSelectedSubCategory("")}
                       className={`shrink-0 rounded-xl px-2.5 py-1 text-[11px] font-bold ${
-                        selectedSubCategory === ''
-                          ? 'bg-[#0072DC] text-white'
-                          : 'bg-slate-200/70 text-slate-700'
+                        selectedSubCategory === ""
+                          ? "bg-[#0072DC] text-white"
+                          : "bg-slate-200/70 text-slate-700"
                       }`}
                     >
-                      {isAr ? 'كل التصنيفات الفرعية' : 'All Subcategories'}
+                      {isAr ? "كل التصنيفات الفرعية" : "All Subcategories"}
                     </button>
                     {currentSubCategories.map((sub: any) => (
                       <button
                         key={sub.id}
                         onClick={() =>
                           setSelectedSubCategory(
-                            selectedSubCategory === sub.id ? '' : sub.id,
+                            selectedSubCategory === sub.id ? "" : sub.id,
                           )
                         }
                         className={`shrink-0 rounded-xl px-2.5 py-1 text-[11px] font-bold ${
                           selectedSubCategory === sub.id
-                            ? 'bg-[#0072DC] text-white'
-                            : 'bg-white border border-slate-200 text-slate-700'
+                            ? "bg-[#0072DC] text-white"
+                            : "bg-white border border-slate-200 text-slate-700"
                         }`}
                       >
                         {isAr ? sub.nameAr : sub.nameEn}
@@ -927,51 +933,51 @@ export default function WherioCustomerWebApp() {
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
                 {[
                   {
-                    key: 'open_now',
-                    en: 'Open Now',
-                    ar: 'مفتوح الآن',
+                    key: "open_now",
+                    en: "Open Now",
+                    ar: "مفتوح الآن",
                     icon: <Clock className="h-3 w-3" />,
                   },
                   {
-                    key: 'kids_friendly',
-                    en: 'Kids Friendly',
-                    ar: 'مناسب للأطفال',
+                    key: "kids_friendly",
+                    en: "Kids Friendly",
+                    ar: "مناسب للأطفال",
                     icon: <Users className="h-3 w-3" />,
                   },
                   {
-                    key: 'parking',
-                    en: 'Parking Available',
-                    ar: 'مواقف سيارات',
+                    key: "parking",
+                    en: "Parking Available",
+                    ar: "مواقف سيارات",
                     icon: <Car className="h-3 w-3" />,
                   },
                   {
-                    key: 'valet',
-                    en: 'Valet Service',
-                    ar: 'خدمة فاليه',
+                    key: "valet",
+                    en: "Valet Service",
+                    ar: "خدمة فاليه",
                     icon: <KeyRound className="h-3 w-3" />,
                   },
                   {
-                    key: 'outdoor_seating',
-                    en: 'Outdoor Seating',
-                    ar: 'جلسات خارجية',
+                    key: "outdoor_seating",
+                    en: "Outdoor Seating",
+                    ar: "جلسات خارجية",
                     icon: <Sun className="h-3 w-3" />,
                   },
                   {
-                    key: 'wheelchair_accessible',
-                    en: 'Wheelchair Access',
-                    ar: 'كراسي متحركة',
+                    key: "wheelchair_accessible",
+                    en: "Wheelchair Access",
+                    ar: "كراسي متحركة",
                     icon: <Accessibility className="h-3 w-3" />,
                   },
                   {
-                    key: 'wifi',
-                    en: 'Fast Wi-Fi',
-                    ar: 'واي فاي',
+                    key: "wifi",
+                    en: "Fast Wi-Fi",
+                    ar: "واي فاي",
                     icon: <Wifi className="h-3 w-3" />,
                   },
                   {
-                    key: 'free_entry',
-                    en: 'Free Entry',
-                    ar: 'دخول مجاني',
+                    key: "free_entry",
+                    en: "Free Entry",
+                    ar: "دخول مجاني",
                     icon: <Ticket className="h-3 w-3" />,
                   },
                 ].map((f) => {
@@ -982,8 +988,8 @@ export default function WherioCustomerWebApp() {
                       onClick={() => toggleAttributeFilter(f.key)}
                       className={`inline-flex shrink-0 items-center gap-1 rounded-xl border px-2.5 py-1.5 text-[11px] font-bold transition ${
                         active
-                          ? 'border-[#00B89C] bg-[#00B89C] text-white'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-[#0072DC]'
+                          ? "border-[#00B89C] bg-[#00B89C] text-white"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-[#0072DC]"
                       }`}
                     >
                       {f.icon}
@@ -1015,16 +1021,16 @@ export default function WherioCustomerWebApp() {
                     className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-[#072549]"
                   >
                     <option value="relevance">
-                      {isAr ? 'الأكثر صلة' : 'Most Relevant'}
+                      {isAr ? "الأكثر صلة" : "Most Relevant"}
                     </option>
                     <option value="distance">
-                      {isAr ? 'الأقرب مسافة' : 'Nearest'}
+                      {isAr ? "الأقرب مسافة" : "Nearest"}
                     </option>
                     <option value="rating">
-                      {isAr ? 'الأعلى تقييماً' : 'Top Rated'}
+                      {isAr ? "الأعلى تقييماً" : "Top Rated"}
                     </option>
                     <option value="completeness">
-                      {isAr ? 'اكتمال البيانات' : 'Data Completeness'}
+                      {isAr ? "اكتمال البيانات" : "Data Completeness"}
                     </option>
                   </select>
                 </div>
@@ -1032,8 +1038,8 @@ export default function WherioCustomerWebApp() {
                 {loading ? (
                   <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-xs font-bold text-slate-500">
                     {isAr
-                      ? 'جاري تحميل دليل الأماكن...'
-                      : 'Loading verified places directory...'}
+                      ? "جاري تحميل دليل الأماكن..."
+                      : "Loading verified places directory..."}
                   </div>
                 ) : placesList.length === 0 ? (
                   /* Empty State / Handle No Results */
@@ -1041,34 +1047,36 @@ export default function WherioCustomerWebApp() {
                     <p className="text-xs font-extrabold text-[#072549]">
                       {noResultsSuggestions?.message ||
                         (isAr
-                          ? 'لم يتم العثور على أماكن تطابق جميع الفلاتر المحددة.'
-                          : 'No places matched all selected filters.')}
+                          ? "لم يتم العثور على أماكن تطابق جميع الفلاتر المحددة."
+                          : "No places matched all selected filters.")}
                     </p>
                     <p className="mt-1 text-[11px] text-slate-500">
                       {isAr
-                        ? 'جرب تخفيف بعض الفلاتر أو البحث في كافة أحياء المدينة:'
-                        : 'Try relaxing one of your filters or exploring all areas in this city:'}
+                        ? "جرب تخفيف بعض الفلاتر أو البحث في كافة أحياء المدينة:"
+                        : "Try relaxing one of your filters or exploring all areas in this city:"}
                     </p>
                     <div className="mt-3 flex flex-wrap justify-center gap-2">
                       <button
                         onClick={() => {
-                          setKeyword('');
-                          setSelectedAreaId('');
-                          setSelectedCategory('');
-                          setSelectedSubCategory('');
+                          setKeyword("");
+                          setSelectedAreaId("");
+                          setSelectedCategory("");
+                          setSelectedSubCategory("");
                           setActiveAttributeFilters([]);
                         }}
                         className="rounded-xl bg-[#072549] px-3 py-1.5 text-xs font-extrabold text-white"
                       >
-                        {isAr ? 'إعادة ضبط جميع الفلاتر' : 'Reset All Filters'}
+                        {isAr ? "إعادة ضبط جميع الفلاتر" : "Reset All Filters"}
                       </button>
                       <button
                         onClick={() =>
-                          requireAuthThen(() => setActiveBottomTab('ai'))
+                          requireAuthThen(() => setActiveBottomTab("ai"))
                         }
                         className="rounded-xl bg-[#00B89C] px-3 py-1.5 text-xs font-extrabold text-white"
                       >
-                        {isAr ? 'اطلب بدائل من المساعد الذكي' : 'Ask AI for Alternatives'}
+                        {isAr
+                          ? "اطلب بدائل من المساعد الذكي"
+                          : "Ask AI for Alternatives"}
                       </button>
                     </div>
                   </div>
@@ -1077,8 +1085,8 @@ export default function WherioCustomerWebApp() {
                     {placesList.map((place: any) => {
                       const isFav = favoritePlaceIds.includes(place.id);
                       const hasUnknownPrice =
-                        place.priceRange === 'UNKNOWN' ||
-                        place.entryFeeStatus === 'UNKNOWN';
+                        place.priceRange === "UNKNOWN" ||
+                        place.entryFeeStatus === "UNKNOWN";
                       const isUnrated =
                         place.rating?.isUnrated ||
                         (place.rating?.reviewCount ?? 0) === 0;
@@ -1092,7 +1100,7 @@ export default function WherioCustomerWebApp() {
                             <img
                               src={
                                 place.images?.[0] ||
-                                'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800'
+                                "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800"
                               }
                               alt={place.name}
                               className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
@@ -1102,15 +1110,15 @@ export default function WherioCustomerWebApp() {
                             {/* Category Pill */}
                             <div
                               className={`absolute top-2.5 flex items-center gap-1.5 ${
-                                isAr ? 'right-2.5' : 'left-2.5'
+                                isAr ? "right-2.5" : "left-2.5"
                               }`}
                             >
                               <span className="rounded-lg bg-[#072549]/90 px-2.5 py-1 text-[10px] font-extrabold text-white backdrop-blur">
                                 {place.categoryName}
                               </span>
-                              {place.openNowStatus === 'OPEN' && (
+                              {place.openNowStatus === "OPEN" && (
                                 <span className="rounded-lg bg-emerald-600/90 px-2 py-1 text-[10px] font-extrabold text-white backdrop-blur">
-                                  {isAr ? 'مفتوح الآن' : 'Open Now'}
+                                  {isAr ? "مفتوح الآن" : "Open Now"}
                                 </span>
                               )}
                             </div>
@@ -1123,15 +1131,15 @@ export default function WherioCustomerWebApp() {
                                 handleToggleFavorite(place.id);
                               }}
                               className={`absolute top-2.5 flex h-8 w-8 items-center justify-center rounded-xl backdrop-blur ${
-                                isAr ? 'left-2.5' : 'right-2.5'
+                                isAr ? "left-2.5" : "right-2.5"
                               } ${
                                 isFav
-                                  ? 'bg-rose-600 text-white'
-                                  : 'bg-black/45 text-white hover:bg-black/70'
+                                  ? "bg-rose-600 text-white"
+                                  : "bg-black/45 text-white hover:bg-black/70"
                               }`}
                             >
                               <Heart
-                                className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`}
+                                className={`h-4 w-4 ${isFav ? "fill-current" : ""}`}
                               />
                             </button>
 
@@ -1162,7 +1170,7 @@ export default function WherioCustomerWebApp() {
                               <div className="shrink-0 text-right">
                                 {isUnrated ? (
                                   <span className="inline-flex items-center rounded-xl bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">
-                                    {isAr ? 'غير مقيّم' : 'Unrated'}
+                                    {isAr ? "غير مقيّم" : "Unrated"}
                                   </span>
                                 ) : (
                                   <>
@@ -1171,8 +1179,8 @@ export default function WherioCustomerWebApp() {
                                       {place.rating?.avgRating}
                                     </span>
                                     <p className="mt-0.5 text-[9px] font-bold text-slate-400">
-                                      ({place.rating?.reviewCount}{' '}
-                                      {isAr ? 'مراجعة' : 'reviews'})
+                                      ({place.rating?.reviewCount}{" "}
+                                      {isAr ? "مراجعة" : "reviews"})
                                     </p>
                                   </>
                                 )}
@@ -1182,31 +1190,31 @@ export default function WherioCustomerWebApp() {
                             {/* Tri-State Attribute Chips */}
                             <div className="mt-2.5 flex flex-wrap gap-1.5 text-[10px]">
                               {place.attributes?.kidsFriendly ===
-                                'AVAILABLE' && (
+                                "AVAILABLE" && (
                                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 font-bold text-emerald-800">
                                   <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600" />
-                                  {isAr ? 'مناسب للأطفال' : 'Kids Friendly'}
+                                  {isAr ? "مناسب للأطفال" : "Kids Friendly"}
                                 </span>
                               )}
-                              {place.attributes?.parking === 'AVAILABLE' && (
+                              {place.attributes?.parking === "AVAILABLE" && (
                                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 font-bold text-emerald-800">
                                   <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600" />
-                                  {isAr ? 'موقف سيارات' : 'Parking'}
+                                  {isAr ? "موقف سيارات" : "Parking"}
                                 </span>
                               )}
                               {place.attributes?.valetParking ===
-                                'AVAILABLE' && (
+                                "AVAILABLE" && (
                                 <span className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-0.5 font-bold text-teal-800">
                                   <CheckCircle2 className="h-2.5 w-2.5 text-teal-600" />
-                                  {isAr ? 'فاليه (Valet)' : 'Valet'}
+                                  {isAr ? "فاليه (Valet)" : "Valet"}
                                 </span>
                               )}
                               {hasUnknownPrice ? (
                                 <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 font-bold text-amber-800">
                                   <HelpCircle className="h-2.5 w-2.5 text-amber-600" />
                                   {isAr
-                                    ? 'السعر: غير متاح في البيانات'
-                                    : 'Price: Unavailable'}
+                                    ? "السعر: غير متاح في البيانات"
+                                    : "Price: Unavailable"}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 px-2 py-0.5 font-bold text-[#0072DC]">
@@ -1220,33 +1228,33 @@ export default function WherioCustomerWebApp() {
                               <div
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleOpenPlaceDetails(place.id, 'parking');
+                                  handleOpenPlaceDetails(place.id, "parking");
                                 }}
                                 className="mt-2.5 flex items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50/75 px-3 py-2 transition hover:border-emerald-400"
                               >
                                 <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                                   {place.parkingConfig.managementMode ===
-                                  'CAMERA_AI' ? (
+                                  "CAMERA_AI" ? (
                                     <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-1.5 py-0.5 text-[9px] font-extrabold text-white">
                                       <Camera className="h-2.5 w-2.5" />
-                                      {isAr ? 'كاميرا ذكية' : 'Camera AI'}
+                                      {isAr ? "كاميرا ذكية" : "Camera AI"}
                                     </span>
                                   ) : (
                                     <span className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-1.5 py-0.5 text-[9px] font-extrabold text-white">
                                       <Wrench className="h-2.5 w-2.5" />
-                                      {isAr ? 'يدوي' : 'Manual'}
+                                      {isAr ? "يدوي" : "Manual"}
                                     </span>
                                   )}
                                   <span className="font-extrabold text-[#072549]">
-                                    {place.parkingConfig.availableSlotsCount} /{' '}
-                                    {place.parkingConfig.totalSlots}{' '}
-                                    {isAr ? 'موقف متاح' : 'Slots Free'}
+                                    {place.parkingConfig.availableSlotsCount} /{" "}
+                                    {place.parkingConfig.totalSlots}{" "}
+                                    {isAr ? "موقف متاح" : "Slots Free"}
                                   </span>
                                   {place.parkingConfig.reservedSlotsCount >
                                     0 && (
                                     <span className="text-[10px] font-bold text-amber-700">
-                                      • {place.parkingConfig.reservedSlotsCount}{' '}
-                                      {isAr ? 'محجوز' : 'Reserved'}
+                                      • {place.parkingConfig.reservedSlotsCount}{" "}
+                                      {isAr ? "محجوز" : "Reserved"}
                                     </span>
                                   )}
                                 </div>
@@ -1254,12 +1262,12 @@ export default function WherioCustomerWebApp() {
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleOpenPlaceDetails(place.id, 'parking');
+                                    handleOpenPlaceDetails(place.id, "parking");
                                   }}
                                   className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[#072549] px-2.5 py-1 text-[10px] font-extrabold text-white hover:bg-[#0c3566]"
                                 >
                                   <Car className="h-3 w-3 text-[#00D2B4]" />
-                                  {isAr ? 'احجز موقف' : 'Reserve Slot'}
+                                  {isAr ? "احجز موقف" : "Reserve Slot"}
                                 </button>
                               </div>
                             )}
@@ -1269,8 +1277,8 @@ export default function WherioCustomerWebApp() {
                               <div className="flex items-center gap-2 text-slate-600">
                                 <span className="inline-flex items-center gap-1 font-bold text-[#072549]">
                                   <Car className="h-3.5 w-3.5 text-[#0072DC]" />
-                                  {place.distance?.driveTimeMinutes}{' '}
-                                  {isAr ? 'د بالسيارة' : 'm drive'}
+                                  {place.distance?.driveTimeMinutes}{" "}
+                                  {isAr ? "د بالسيارة" : "m drive"}
                                 </span>
                                 <span className="text-slate-300">•</span>
                                 <span className="inline-flex items-center gap-1">
@@ -1288,21 +1296,23 @@ export default function WherioCustomerWebApp() {
                                         e.stopPropagation();
                                         handleOpenPlaceDetails(
                                           place.id,
-                                          'media',
+                                          "media",
                                         );
                                       }}
                                       className="inline-flex items-center gap-1 rounded-lg bg-[#0072DC]/10 px-2 py-1 text-[10px] font-extrabold text-[#0072DC] transition hover:bg-[#0072DC] hover:text-white"
                                     >
                                       <ShoppingBag className="h-3 w-3" />
                                       <span>
-                                        {isAr ? 'المنيو والطلب' : 'Menu & Store'}
+                                        {isAr
+                                          ? "المنيو والطلب"
+                                          : "Menu & Store"}
                                       </span>
                                     </button>
                                   )}
 
                                 {place.externalRating && (
                                   <span className="text-[10px] font-semibold text-slate-400">
-                                    {isAr ? 'تقييم خارجي:' : 'Ext:'}{' '}
+                                    {isAr ? "تقييم خارجي:" : "Ext:"}{" "}
                                     <strong className="text-slate-600">
                                       {place.externalRating.rating}/5
                                     </strong>
@@ -1323,25 +1333,25 @@ export default function WherioCustomerWebApp() {
           {/* =========================================================
               TAB 2: SEARCH & COMPOUND FILTERS (البحث والفلاتر)
           ========================================================= */}
-          {activeBottomTab === 'search' && (
+          {activeBottomTab === "search" && (
             <div className="space-y-4">
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
                 <h2 className="text-sm font-extrabold text-[#072549]">
                   {isAr
-                    ? 'البحث المتقدم والفلاتر المركبة'
-                    : 'Advanced Search & Compound Filters'}
+                    ? "البحث المتقدم والفلاتر المركبة"
+                    : "Advanced Search & Compound Filters"}
                 </h2>
                 <p className="mt-0.5 text-[11px] text-slate-500">
                   {isAr
-                    ? 'ابحث بالاسم، المنطقة، التصنيف الفرعي، والتجهيزات المتعددة في آن واحد'
-                    : 'Filter by keyword, district/area, sub-category, and confirmed practical facilities'}
+                    ? "ابحث بالاسم، المنطقة، التصنيف الفرعي، والتجهيزات المتعددة في آن واحد"
+                    : "Filter by keyword, district/area, sub-category, and confirmed practical facilities"}
                 </p>
 
                 {/* Keyword Input */}
                 <div className="relative mt-3">
                   <Search
                     className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 ${
-                      isAr ? 'right-3' : 'left-3'
+                      isAr ? "right-3" : "left-3"
                     }`}
                   />
                   <input
@@ -1350,11 +1360,11 @@ export default function WherioCustomerWebApp() {
                     onChange={(e) => setKeyword(e.target.value)}
                     placeholder={
                       isAr
-                        ? 'ابحث باسم المكان أو الحي (مثال: وارنر براذرز، إكسير بن)...'
-                        : 'Search venue name or district (e.g., Warner Bros, Elixir)...'
+                        ? "ابحث باسم المكان أو الحي (مثال: وارنر براذرز، إكسير بن)..."
+                        : "Search venue name or district (e.g., Warner Bros, Elixir)..."
                     }
                     className={`w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-medium text-[#072549] focus:border-[#0072DC] focus:bg-white focus:outline-none ${
-                      isAr ? 'pr-9 pl-3' : 'pl-9 pr-3'
+                      isAr ? "pr-9 pl-3" : "pl-9 pr-3"
                     }`}
                   />
                 </div>
@@ -1364,19 +1374,19 @@ export default function WherioCustomerWebApp() {
                   <div className="mt-3">
                     <label className="text-[11px] font-extrabold text-[#072549]">
                       {isAr
-                        ? 'المنطقة / الحي داخل المدينة:'
-                        : 'Area / District inside City:'}
+                        ? "المنطقة / الحي داخل المدينة:"
+                        : "Area / District inside City:"}
                     </label>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       <button
-                        onClick={() => setSelectedAreaId('')}
+                        onClick={() => setSelectedAreaId("")}
                         className={`rounded-xl px-2.5 py-1 text-[11px] font-bold ${
-                          selectedAreaId === ''
-                            ? 'bg-[#072549] text-white'
-                            : 'bg-slate-100 text-slate-600'
+                          selectedAreaId === ""
+                            ? "bg-[#072549] text-white"
+                            : "bg-slate-100 text-slate-600"
                         }`}
                       >
-                        {isAr ? 'كل المناطق' : 'All Areas'}
+                        {isAr ? "كل المناطق" : "All Areas"}
                       </button>
                       {currentCityAreas.map((area: any) => (
                         <button
@@ -1384,8 +1394,8 @@ export default function WherioCustomerWebApp() {
                           onClick={() => setSelectedAreaId(area.id)}
                           className={`rounded-xl px-2.5 py-1 text-[11px] font-bold ${
                             selectedAreaId === area.id
-                              ? 'bg-[#0072DC] text-white'
-                              : 'bg-slate-100 text-slate-600'
+                              ? "bg-[#0072DC] text-white"
+                              : "bg-slate-100 text-slate-600"
                           }`}
                         >
                           {isAr ? area.nameAr : area.nameEn}
@@ -1399,51 +1409,55 @@ export default function WherioCustomerWebApp() {
                 <div className="mt-3">
                   <label className="text-[11px] font-extrabold text-[#072549]">
                     {isAr
-                      ? 'التجهيزات العملية المؤكدة وحالة العمل:'
-                      : 'Confirmed Facilities & Availability:'}
+                      ? "التجهيزات العملية المؤكدة وحالة العمل:"
+                      : "Confirmed Facilities & Availability:"}
                   </label>
                   <div className="mt-1.5 grid grid-cols-2 gap-2">
                     {[
                       {
-                        key: 'open_now',
-                        en: 'Open Now',
-                        ar: 'مفتوح الآن',
+                        key: "open_now",
+                        en: "Open Now",
+                        ar: "مفتوح الآن",
                       },
                       {
-                        key: 'kids_friendly',
-                        en: 'Kids Friendly',
-                        ar: 'مناسب للأطفال',
+                        key: "kids_friendly",
+                        en: "Kids Friendly",
+                        ar: "مناسب للأطفال",
                       },
                       {
-                        key: 'parking',
-                        en: 'Parking Available',
-                        ar: 'مواقف سيارات',
+                        key: "parking",
+                        en: "Parking Available",
+                        ar: "مواقف سيارات",
                       },
                       {
-                        key: 'valet',
-                        en: 'Valet Service',
-                        ar: 'خدمة صف السيارات (فاليه)',
+                        key: "valet",
+                        en: "Valet Service",
+                        ar: "خدمة صف السيارات (فاليه)",
                       },
                       {
-                        key: 'outdoor_seating',
-                        en: 'Outdoor Seating',
-                        ar: 'جلسات خارجية',
+                        key: "outdoor_seating",
+                        en: "Outdoor Seating",
+                        ar: "جلسات خارجية",
                       },
                       {
-                        key: 'wheelchair_accessible',
-                        en: 'Wheelchair Access',
-                        ar: 'كراسي متحركة',
-                      },
-                      { key: 'wifi', en: 'Wi-Fi Available', ar: 'واي فاي متاح' },
-                      {
-                        key: 'free_entry',
-                        en: 'Free Entry',
-                        ar: 'دخول مجاني',
+                        key: "wheelchair_accessible",
+                        en: "Wheelchair Access",
+                        ar: "كراسي متحركة",
                       },
                       {
-                        key: 'no_reservation',
-                        en: 'No Reservation Needed',
-                        ar: 'بدون حجز مسبق',
+                        key: "wifi",
+                        en: "Wi-Fi Available",
+                        ar: "واي فاي متاح",
+                      },
+                      {
+                        key: "free_entry",
+                        en: "Free Entry",
+                        ar: "دخول مجاني",
+                      },
+                      {
+                        key: "no_reservation",
+                        en: "No Reservation Needed",
+                        ar: "بدون حجز مسبق",
                       },
                     ].map((attr) => {
                       const active = activeAttributeFilters.includes(attr.key);
@@ -1454,8 +1468,8 @@ export default function WherioCustomerWebApp() {
                           onClick={() => toggleAttributeFilter(attr.key)}
                           className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold transition ${
                             active
-                              ? 'border-[#00B89C] bg-[#00B89C]/10 text-[#072549]'
-                              : 'border-slate-200 bg-slate-50 text-slate-600'
+                              ? "border-[#00B89C] bg-[#00B89C]/10 text-[#072549]"
+                              : "border-slate-200 bg-slate-50 text-slate-600"
                           }`}
                         >
                           <span>{isAr ? attr.ar : attr.en}</span>
@@ -1483,15 +1497,15 @@ export default function WherioCustomerWebApp() {
                     activeAttributeFilters.length > 0) && (
                     <button
                       onClick={() => {
-                        setKeyword('');
-                        setSelectedAreaId('');
-                        setSelectedCategory('');
-                        setSelectedSubCategory('');
+                        setKeyword("");
+                        setSelectedAreaId("");
+                        setSelectedCategory("");
+                        setSelectedSubCategory("");
                         setActiveAttributeFilters([]);
                       }}
                       className="text-[11px] font-bold text-rose-600 underline"
                     >
-                      {isAr ? 'إعادة ضبط الفلاتر' : 'Reset Filters'}
+                      {isAr ? "إعادة ضبط الفلاتر" : "Reset Filters"}
                     </button>
                   )}
                 </div>
@@ -1535,7 +1549,7 @@ export default function WherioCustomerWebApp() {
           {/* =========================================================
               TAB 3: AI CONCIERGE (المساعد الذكي)
           ========================================================= */}
-          {activeBottomTab === 'ai' && (
+          {activeBottomTab === "ai" && (
             <AiConciergeTab
               country={country}
               lang={lang}
@@ -1543,9 +1557,7 @@ export default function WherioCustomerWebApp() {
               userCoords={{
                 lat: effectiveLat,
                 lng: effectiveLng,
-                label: isAr
-                  ? currentCityMeta.nameAr
-                  : currentCityMeta.nameEn,
+                label: isAr ? currentCityMeta.nameAr : currentCityMeta.nameEn,
               }}
               onSelectPlace={(id) => handleOpenPlaceDetails(id)}
             />
@@ -1554,18 +1566,18 @@ export default function WherioCustomerWebApp() {
           {/* =========================================================
               TAB 4: FAVORITES (المفضلة)
           ========================================================= */}
-          {activeBottomTab === 'favorites' && (
+          {activeBottomTab === "favorites" && (
             <div className="space-y-3">
               <div className="rounded-2xl bg-[#072549] p-4 text-white">
                 <h2 className="text-sm font-extrabold">
                   {isAr
-                    ? 'قائمة الأماكن المفضلة المحفوظة'
-                    : 'Your Saved Favorite Places'}
+                    ? "قائمة الأماكن المفضلة المحفوظة"
+                    : "Your Saved Favorite Places"}
                 </h2>
                 <p className="mt-0.5 text-[11px] text-sky-100">
                   {isAr
-                    ? 'الأماكن التي قمت بحفظها للرجوع إليها سريعاً في أبوظبي والرياض'
-                    : 'Quick access to places you bookmarked across Abu Dhabi & Riyadh'}
+                    ? "الأماكن التي قمت بحفظها للرجوع إليها سريعاً في أبوظبي والرياض"
+                    : "Quick access to places you bookmarked across Abu Dhabi & Riyadh"}
                 </p>
               </div>
 
@@ -1608,8 +1620,8 @@ export default function WherioCustomerWebApp() {
                 .length === 0 && (
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-xs text-slate-500">
                   {isAr
-                    ? 'لا توجد أماكن مفضلة في هذه المدينة حالياً. اضغط على أيقونة القلب لحفظ أي مكان.'
-                    : 'No saved favorites in this city yet. Tap the heart icon on any venue to bookmark it.'}
+                    ? "لا توجد أماكن مفضلة في هذه المدينة حالياً. اضغط على أيقونة القلب لحفظ أي مكان."
+                    : "No saved favorites in this city yet. Tap the heart icon on any venue to bookmark it."}
                 </div>
               )}
             </div>
@@ -1618,7 +1630,7 @@ export default function WherioCustomerWebApp() {
           {/* =========================================================
               TAB 5: ACCOUNT & DUAL VERIFICATION (حسابي)
           ========================================================= */}
-          {activeBottomTab === 'account' && (
+          {activeBottomTab === "account" && (
             <div className="space-y-4">
               {/* Current User Verification Status Card */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
@@ -1627,18 +1639,18 @@ export default function WherioCustomerWebApp() {
                     <span className="rounded-lg bg-[#072549] px-2.5 py-0.5 text-[10px] font-extrabold text-white">
                       {isAuthenticated
                         ? isAr
-                          ? 'حساب مسجل في ويريو'
-                          : 'Authenticated Wherio Member'
+                          ? "حساب مسجل في ويريو"
+                          : "Authenticated Wherio Member"
                         : isAr
-                          ? 'وضع الزائر العام (Public Preview)'
-                          : 'Public Directory Preview Mode'}
+                          ? "وضع الزائر العام (Public Preview)"
+                          : "Public Directory Preview Mode"}
                     </span>
                     <h2 className="mt-1.5 text-base font-extrabold text-[#072549]">
                       {isAuthenticated
                         ? currentUser.name
                         : isAr
-                          ? 'زائر غير مسجل'
-                          : 'Guest Visitor'}
+                          ? "زائر غير مسجل"
+                          : "Guest Visitor"}
                     </h2>
                     {isAuthenticated && (
                       <p className="text-xs text-slate-500">
@@ -1653,7 +1665,7 @@ export default function WherioCustomerWebApp() {
                       className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[11px] font-bold text-rose-700 hover:bg-rose-100"
                     >
                       <LogOut className="h-3.5 w-3.5" />
-                      <span>{isAr ? 'خروج' : 'Logout'}</span>
+                      <span>{isAr ? "خروج" : "Logout"}</span>
                     </button>
                   )}
                 </div>
@@ -1664,48 +1676,46 @@ export default function WherioCustomerWebApp() {
                     <div
                       className={`rounded-xl border p-2.5 ${
                         currentUser.isPhoneVerified
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                          : 'border-amber-200 bg-amber-50 text-amber-900'
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                          : "border-amber-200 bg-amber-50 text-amber-900"
                       }`}
                     >
                       <div className="flex items-center gap-1.5 font-extrabold">
                         <Phone className="h-3.5 w-3.5" />
-                        <span>
-                          {isAr ? 'توثيق الهاتف (OTP)' : 'Phone OTP'}
-                        </span>
+                        <span>{isAr ? "توثيق الهاتف (OTP)" : "Phone OTP"}</span>
                       </div>
                       <p className="mt-0.5 text-[10px]">
                         {currentUser.isPhoneVerified
                           ? isAr
-                            ? 'موثق وفريد ✓'
-                            : 'Verified & Unique ✓'
+                            ? "موثق وفريد ✓"
+                            : "Verified & Unique ✓"
                           : isAr
-                            ? 'غير موثق'
-                            : 'Not Verified'}
+                            ? "غير موثق"
+                            : "Not Verified"}
                       </p>
                     </div>
 
                     <div
                       className={`rounded-xl border p-2.5 ${
                         currentUser.isEmailVerified
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                          : 'border-amber-200 bg-amber-50 text-amber-900'
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                          : "border-amber-200 bg-amber-50 text-amber-900"
                       }`}
                     >
                       <div className="flex items-center gap-1.5 font-extrabold">
                         <Mail className="h-3.5 w-3.5" />
                         <span>
-                          {isAr ? 'البريد الإلكتروني' : 'Unique Email'}
+                          {isAr ? "البريد الإلكتروني" : "Unique Email"}
                         </span>
                       </div>
                       <p className="mt-0.5 text-[10px]">
                         {currentUser.isEmailVerified
                           ? isAr
-                            ? 'موثق وفريد ✓'
-                            : 'Verified & Unique ✓'
+                            ? "موثق وفريد ✓"
+                            : "Verified & Unique ✓"
                           : isAr
-                            ? 'بانتظار التوثيق'
-                            : 'Pending Verification'}
+                            ? "بانتظار التوثيق"
+                            : "Pending Verification"}
                       </p>
                     </div>
                   </div>
@@ -1716,22 +1726,22 @@ export default function WherioCustomerWebApp() {
                   <p className="text-[11px] text-slate-500">
                     {isAuthenticated
                       ? isAr
-                        ? 'جلستك محمية وموثقة عبر رمز الجلسة النشط.'
-                        : 'Your session is active and protected.'
+                        ? "جلستك محمية وموثقة عبر رمز الجلسة النشط."
+                        : "Your session is active and protected."
                       : isAr
-                        ? 'سجل دخولك أدناه لتفعيل المفضلة والمساعد الذكي والتقييمات.'
-                        : 'Sign in below to unlock Favorites, AI Concierge & Reviews.'}
+                        ? "سجل دخولك أدناه لتفعيل المفضلة والمساعد الذكي والتقييمات."
+                        : "Sign in below to unlock Favorites, AI Concierge & Reviews."}
                   </p>
                   <button
                     type="button"
-                    onClick={() => setOnboardingStep('country')}
+                    onClick={() => setOnboardingStep("country")}
                     className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-[#072549] hover:border-[#0072DC]"
                   >
                     <Compass className="h-3.5 w-3.5 text-[#0072DC]" />
                     <span>
                       {isAr
-                        ? 'شاشة البداية واختيار الدولة'
-                        : 'Welcome & Country Setup'}
+                        ? "شاشة البداية واختيار الدولة"
+                        : "Welcome & Country Setup"}
                     </span>
                   </button>
                 </div>
@@ -1741,15 +1751,15 @@ export default function WherioCustomerWebApp() {
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
                 <h3 className="text-xs font-extrabold text-[#072549]">
                   {isAr
-                    ? 'إدارة الحساب وتوثيق الهاتف (OTP) والبريد الإلكتروني الفريد:'
-                    : 'Account Profile, Phone OTP & Unique Email Verification:'}
+                    ? "إدارة الحساب وتوثيق الهاتف (OTP) والبريد الإلكتروني الفريد:"
+                    : "Account Profile, Phone OTP & Unique Email Verification:"}
                 </h3>
                 <div className="mt-2.5 space-y-2">
                   <input
                     type="text"
                     value={nameInput}
                     onChange={(e) => setNameInput(e.target.value)}
-                    placeholder={isAr ? 'الاسم الكامل' : 'Full Name'}
+                    placeholder={isAr ? "الاسم الكامل" : "Full Name"}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
                   />
                   <input
@@ -1779,8 +1789,8 @@ export default function WherioCustomerWebApp() {
                       className="flex-1 rounded-xl bg-[#072549] py-2 text-xs font-extrabold text-white hover:bg-[#0072DC]"
                     >
                       {isAr
-                        ? 'تأكيد OTP + البريد الإلكتروني'
-                        : 'Verify OTP & Unique Email'}
+                        ? "تأكيد OTP + البريد الإلكتروني"
+                        : "Verify OTP & Unique Email"}
                     </button>
                   </div>
 
@@ -1790,7 +1800,7 @@ export default function WherioCustomerWebApp() {
                       onClick={handleSaveProfileAndPreferences}
                       className="rounded-xl border border-[#0072DC] bg-[#0072DC]/10 py-2 text-[11px] font-extrabold text-[#0072DC]"
                     >
-                      {isAr ? 'حفظ الملف والتفضيلات' : 'Save Profile & Prefs'}
+                      {isAr ? "حفظ الملف والتفضيلات" : "Save Profile & Prefs"}
                     </button>
                     <button
                       type="button"
@@ -1798,9 +1808,7 @@ export default function WherioCustomerWebApp() {
                       className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-50 py-2 text-[11px] font-bold text-slate-700"
                     >
                       <RefreshCw className="h-3 w-3" />
-                      <span>
-                        {isAr ? 'إعادة إرسال الرمز' : 'Resend Code'}
-                      </span>
+                      <span>{isAr ? "إعادة إرسال الرمز" : "Resend Code"}</span>
                     </button>
                   </div>
 
@@ -1811,8 +1819,8 @@ export default function WherioCustomerWebApp() {
                       className="w-full rounded-xl border border-amber-300 bg-amber-50 py-2 text-[11px] font-bold text-amber-900"
                     >
                       {isAr
-                        ? 'استعادة الحساب عبر الهاتف أو البريد المؤكد'
-                        : 'Recover Existing Account via Verified Contact'}
+                        ? "استعادة الحساب عبر الهاتف أو البريد المؤكد"
+                        : "Recover Existing Account via Verified Contact"}
                     </button>
                   )}
 
@@ -1822,8 +1830,8 @@ export default function WherioCustomerWebApp() {
                       className="w-full rounded-xl bg-[#00B89C] py-2 text-xs font-extrabold text-white"
                     >
                       {isAr
-                        ? 'توثيق البريد الإلكتروني لحسابك الحالي الآن'
-                        : 'Verify Email for Current Account Now'}
+                        ? "توثيق البريد الإلكتروني لحسابك الحالي الآن"
+                        : "Verify Email for Current Account Now"}
                     </button>
                   )}
                   {authStatusMsg && (
@@ -1838,8 +1846,8 @@ export default function WherioCustomerWebApp() {
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
                 <h3 className="text-xs font-extrabold text-[#072549]">
                   {isAr
-                    ? 'إعدادات الدولة واللغة وتفضيلات الاستكشاف المحفوظة:'
-                    : 'Preferred Country, Language & Saved Discovery Preferences:'}
+                    ? "إعدادات الدولة واللغة وتفضيلات الاستكشاف المحفوظة:"
+                    : "Preferred Country, Language & Saved Discovery Preferences:"}
                 </h3>
                 <RegionSelectDropdown
                   value={country}
@@ -1857,23 +1865,23 @@ export default function WherioCustomerWebApp() {
                 <div className="border-t border-slate-100 pt-3 space-y-2.5">
                   <p className="text-[11px] font-extrabold text-[#072549]">
                     {isAr
-                      ? 'تفضيلات الأنشطة والفئات المفضلة:'
-                      : 'Preferred Activity Categories:'}
+                      ? "تفضيلات الأنشطة والفئات المفضلة:"
+                      : "Preferred Activity Categories:"}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {[
-                      { id: 'cat-restaurants', en: 'Restaurants', ar: 'مطاعم' },
-                      { id: 'cat-cafes', en: 'Cafes', ar: 'مقاهي' },
-                      { id: 'cat-cinemas', en: 'Cinemas', ar: 'سينما' },
+                      { id: "cat-restaurants", en: "Restaurants", ar: "مطاعم" },
+                      { id: "cat-cafes", en: "Cafes", ar: "مقاهي" },
+                      { id: "cat-cinemas", en: "Cinemas", ar: "سينما" },
                       {
-                        id: 'cat-entertainment',
-                        en: 'Entertainment',
-                        ar: 'ترفيه وأنشطة',
+                        id: "cat-entertainment",
+                        en: "Entertainment",
+                        ar: "ترفيه وأنشطة",
                       },
                       {
-                        id: 'cat-parking',
-                        en: 'Parking Spots',
-                        ar: 'مواقف السيارات',
+                        id: "cat-parking",
+                        en: "Parking Spots",
+                        ar: "مواقف السيارات",
                       },
                     ].map((cat) => {
                       const active = preferredCategories.includes(cat.id);
@@ -1890,8 +1898,8 @@ export default function WherioCustomerWebApp() {
                           }
                           className={`rounded-xl px-2.5 py-1 text-[11px] font-bold transition ${
                             active
-                              ? 'bg-[#072549] text-white'
-                              : 'bg-slate-100 text-slate-600'
+                              ? "bg-[#072549] text-white"
+                              : "bg-slate-100 text-slate-600"
                           }`}
                         >
                           {isAr ? cat.ar : cat.en}
@@ -1902,27 +1910,27 @@ export default function WherioCustomerWebApp() {
 
                   <p className="text-[11px] font-extrabold text-[#072549]">
                     {isAr
-                      ? 'التجهيزات المفضلة عند البحث:'
-                      : 'Preferred Practical Facilities:'}
+                      ? "التجهيزات المفضلة عند البحث:"
+                      : "Preferred Practical Facilities:"}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       {
-                        id: 'kids_friendly',
-                        en: 'Kids Friendly',
-                        ar: 'مناسب للأطفال',
+                        id: "kids_friendly",
+                        en: "Kids Friendly",
+                        ar: "مناسب للأطفال",
                       },
-                      { id: 'parking', en: 'Parking', ar: 'مواقف سيارات' },
+                      { id: "parking", en: "Parking", ar: "مواقف سيارات" },
                       {
-                        id: 'valet',
-                        en: 'Valet Service',
-                        ar: 'خدمة فاليه',
+                        id: "valet",
+                        en: "Valet Service",
+                        ar: "خدمة فاليه",
                       },
-                      { id: 'wifi', en: 'Fast Wi-Fi', ar: 'واي فاي' },
+                      { id: "wifi", en: "Fast Wi-Fi", ar: "واي فاي" },
                       {
-                        id: 'outdoor_seating',
-                        en: 'Outdoor Seating',
-                        ar: 'جلسات خارجية',
+                        id: "outdoor_seating",
+                        en: "Outdoor Seating",
+                        ar: "جلسات خارجية",
                       },
                     ].map((attr) => {
                       const active = preferredAttributes.includes(attr.id);
@@ -1939,8 +1947,8 @@ export default function WherioCustomerWebApp() {
                           }
                           className={`rounded-xl px-2.5 py-1 text-[11px] font-bold transition ${
                             active
-                              ? 'bg-[#00B89C] text-white'
-                              : 'bg-slate-100 text-slate-600'
+                              ? "bg-[#00B89C] text-white"
+                              : "bg-slate-100 text-slate-600"
                           }`}
                         >
                           {isAr ? attr.ar : attr.en}
@@ -1957,13 +1965,13 @@ export default function WherioCustomerWebApp() {
                         setSelectedCategory(preferredCategories[0]);
                       }
                       setActiveAttributeFilters(preferredAttributes);
-                      setActiveBottomTab('explore');
+                      setActiveBottomTab("explore");
                     }}
                     className="w-full rounded-xl bg-[#0072DC] py-2 text-xs font-extrabold text-white hover:bg-[#072549]"
                   >
                     {isAr
-                      ? 'حفظ وتطبيق تفضيلات الاستكشاف الآن'
-                      : 'Save & Apply My Discovery Preferences'}
+                      ? "حفظ وتطبيق تفضيلات الاستكشاف الآن"
+                      : "Save & Apply My Discovery Preferences"}
                   </button>
                 </div>
               </div>
@@ -1978,13 +1986,13 @@ export default function WherioCustomerWebApp() {
                 <div>
                   <p className="text-xs font-extrabold">
                     {isAr
-                      ? 'بوابة الإدارة والحوكمة (Wherio Admin Portal)'
-                      : 'Wherio Admin & Governance Portal (Port 3006)'}
+                      ? "بوابة الإدارة والحوكمة (Wherio Admin Portal)"
+                      : "Wherio Admin & Governance Portal (Port 3006)"}
                   </p>
                   <p className="text-[10px] text-sky-100">
                     {isAr
-                      ? 'إدارة الـ 100 مكان، جودة البيانات، الإشراف على التقييمات، وتفعيل المدن'
-                      : 'Manage 100 launch places, completeness score, review moderation & cities'}
+                      ? "إدارة الـ 100 مكان، جودة البيانات، الإشراف على التقييمات، وتفعيل المدن"
+                      : "Manage 100 launch places, completeness score, review moderation & cities"}
                   </p>
                 </div>
                 <ExternalLink className="h-4 w-4 shrink-0" />
@@ -1997,7 +2005,7 @@ export default function WherioCustomerWebApp() {
         {showAuthGateModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs">
             <div
-              dir={isAr ? 'rtl' : 'ltr'}
+              dir={isAr ? "rtl" : "ltr"}
               className="w-full max-w-[390px] rounded-2xl bg-white p-5 shadow-2xl"
             >
               <div className="flex items-center gap-2.5">
@@ -2007,13 +2015,13 @@ export default function WherioCustomerWebApp() {
                 <div>
                   <h3 className="text-sm font-extrabold text-[#072549]">
                     {isAr
-                      ? 'تسجيل الدخول مطلوب للمتابعة'
-                      : 'Sign In Required to Continue'}
+                      ? "تسجيل الدخول مطلوب للمتابعة"
+                      : "Sign In Required to Continue"}
                   </h3>
                   <p className="text-[11px] text-slate-500">
                     {isAr
-                      ? 'يتطلب استخدام الموقع والتواصل المباشر أو المساعد الذكي أو حفظ المفضلة حساباً مسجلاً في ويريو.'
-                      : 'Using Location & Direct Contact, the AI Concierge, or saving Favorites requires a registered Wherio account.'}
+                      ? "يتطلب استخدام الموقع والتواصل المباشر أو المساعد الذكي أو حفظ المفضلة حساباً مسجلاً في ويريو."
+                      : "Using Location & Direct Contact, the AI Concierge, or saving Favorites requires a registered Wherio account."}
                   </p>
                 </div>
               </div>
@@ -2022,30 +2030,28 @@ export default function WherioCustomerWebApp() {
                 <button
                   onClick={() => {
                     setShowAuthGateModal(false);
-                    setOnboardingStep('auth');
+                    setOnboardingStep("auth");
                   }}
                   className="w-full rounded-xl bg-[#072549] py-2.5 text-xs font-extrabold text-white hover:bg-[#0072DC]"
                 >
                   {isAr
-                    ? 'تسجيل الدخول أو إنشاء حساب (هاتف OTP + بريد إلكتروني)'
-                    : 'Sign In or Create Account (Phone OTP & Email)'}
+                    ? "تسجيل الدخول أو إنشاء حساب (هاتف OTP + بريد إلكتروني)"
+                    : "Sign In or Create Account (Phone OTP & Email)"}
                 </button>
                 <button
                   onClick={() => {
                     setShowAuthGateModal(false);
-                    setActiveBottomTab('account');
+                    setActiveBottomTab("account");
                   }}
                   className="w-full rounded-xl border border-slate-200 py-2 text-xs font-bold text-[#072549]"
                 >
-                  {isAr
-                    ? 'الانتقال إلى صفحة حسابي'
-                    : 'Go to Account Settings'}
+                  {isAr ? "الانتقال إلى صفحة حسابي" : "Go to Account Settings"}
                 </button>
                 <button
                   onClick={() => setShowAuthGateModal(false)}
                   className="w-full py-1.5 text-[11px] font-semibold text-slate-400"
                 >
-                  {isAr ? 'إلغاء' : 'Cancel'}
+                  {isAr ? "إلغاء" : "Cancel"}
                 </button>
               </div>
             </div>
@@ -2072,7 +2078,7 @@ export default function WherioCustomerWebApp() {
             }}
             onRequireVerifyEmail={() => {
               setSelectedPlaceId(null);
-              setActiveBottomTab('account');
+              setActiveBottomTab("account");
             }}
             onClose={() => setSelectedPlaceId(null)}
             initialTab={selectedPlaceInitialTab}
@@ -2107,33 +2113,33 @@ export default function WherioCustomerWebApp() {
         <nav className="fixed bottom-0 z-30 flex w-full max-w-[430px] items-center justify-around border-t border-slate-200 bg-white/95 py-2 backdrop-blur-md">
           {[
             {
-              id: 'explore',
-              labelEn: 'Explore',
-              labelAr: 'استكشف',
+              id: "explore",
+              labelEn: "Explore",
+              labelAr: "استكشف",
               icon: <Home className="h-4 w-4" />,
             },
             {
-              id: 'search',
-              labelEn: 'Filters',
-              labelAr: 'الفلاتر',
+              id: "search",
+              labelEn: "Filters",
+              labelAr: "الفلاتر",
               icon: <SlidersHorizontal className="h-4 w-4" />,
             },
             {
-              id: 'ai',
-              labelEn: 'AI Concierge',
-              labelAr: 'المساعد الذكي',
+              id: "ai",
+              labelEn: "AI Concierge",
+              labelAr: "المساعد الذكي",
               icon: <Sparkles className="h-4 w-4" />,
             },
             {
-              id: 'favorites',
-              labelEn: 'Favorites',
-              labelAr: 'المفضلة',
+              id: "favorites",
+              labelEn: "Favorites",
+              labelAr: "المفضلة",
               icon: <Heart className="h-4 w-4" />,
             },
             {
-              id: 'account',
-              labelEn: 'Account',
-              labelAr: 'حسابي',
+              id: "account",
+              labelEn: "Account",
+              labelAr: "حسابي",
               icon: <User className="h-4 w-4" />,
             },
           ].map((tab) => {
@@ -2142,7 +2148,7 @@ export default function WherioCustomerWebApp() {
               <button
                 key={tab.id}
                 onClick={() => {
-                  if (tab.id === 'ai' || tab.id === 'favorites') {
+                  if (tab.id === "ai" || tab.id === "favorites") {
                     requireAuthThen(() => setActiveBottomTab(tab.id as any));
                   } else {
                     setActiveBottomTab(tab.id as any);
@@ -2150,13 +2156,13 @@ export default function WherioCustomerWebApp() {
                 }}
                 className={`flex flex-col items-center gap-0.5 px-2 py-1 text-[10px] font-extrabold transition ${
                   active
-                    ? 'text-[#0072DC]'
-                    : 'text-slate-400 hover:text-[#072549]'
+                    ? "text-[#0072DC]"
+                    : "text-slate-400 hover:text-[#072549]"
                 }`}
               >
                 <div
                   className={`rounded-xl p-1 transition ${
-                    active ? 'bg-[#0072DC]/10 text-[#0072DC]' : ''
+                    active ? "bg-[#0072DC]/10 text-[#0072DC]" : ""
                   }`}
                 >
                   {tab.icon}

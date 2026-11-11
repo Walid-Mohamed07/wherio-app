@@ -18,7 +18,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import {
-  AwfarApi,
+  WherioApi,
   CountryCode,
   LangCode,
   setStoredSessionToken,
@@ -190,7 +190,7 @@ export default function OnboardingFlow({
     }
     setBusy(true);
     try {
-      const res = await AwfarApi.sendOtp(
+      const res = await WherioApi.sendOtp(
         phoneInput.trim(),
         country,
         emailInput.trim() || undefined,
@@ -228,7 +228,7 @@ export default function OnboardingFlow({
       const displayName =
         nameInput.trim() ||
         (emailInput.includes("@") ? emailInput.split("@")[0] : "Wherio Member");
-      const res = await AwfarApi.verifyOtp(
+      const res = await WherioApi.verifyOtp(
         phoneInput.trim(),
         otpInput.trim(),
         displayName,

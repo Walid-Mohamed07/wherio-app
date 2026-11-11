@@ -65,7 +65,7 @@ export async function apiRequest<T>(
 
 export const apiFetch = apiRequest;
 
-export const AwfarApi = {
+export const WherioApi = {
   getCountries: (country: CountryCode, lang: LangCode) =>
     apiRequest<any[]>("/places/countries", {}, country, lang),
 
@@ -407,5 +407,3 @@ export const AwfarApi = {
       "en",
     ),
 };
-
-export const WherioApi = AwfarApi;
