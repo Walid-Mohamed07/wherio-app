@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { WherioAppProvider } from '@/context/WherioAppContext';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -77,7 +78,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased selection:bg-[#0072DC] selection:text-white">
-        {children}
+        <WherioAppProvider>{children}</WherioAppProvider>
       </body>
     </html>
   );

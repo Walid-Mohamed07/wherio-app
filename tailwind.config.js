@@ -12,7 +12,7 @@ module.exports = {
         arabic: ['var(--font-cairo)', 'var(--font-jakarta)', 'sans-serif'],
       },
       colors: {
-        awfar: {
+        wherio: {
           primary: '#0B6E4F',
           primaryDark: '#064E3B',
           primaryLight: '#ECFDF5',

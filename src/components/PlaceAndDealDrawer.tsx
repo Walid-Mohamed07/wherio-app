@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Share2,
@@ -32,9 +32,9 @@ import {
   Box,
   Scale,
   RefreshCw,
-} from 'lucide-react';
-import { AwfarApi, apiFetch, CountryCode, LangCode } from '@/lib/api';
-import { GlobalCartItem } from './GlobalCartDrawer';
+} from "lucide-react";
+import { WherioApi, apiFetch, CountryCode, LangCode } from "@/lib/api";
+import { GlobalCartItem } from "./GlobalCartDrawer";
 
 interface PlaceAndDealDrawerProps {
   placeId?: string | null;
@@ -55,11 +55,13 @@ interface PlaceAndDealDrawerProps {
   onRequireAuth: () => void;
   onRequireVerifyEmail?: () => void;
   onClose: () => void;
-  initialTab?: 'overview' | 'parking' | 'media' | 'reviews';
+  initialTab?: "overview" | "parking" | "media" | "reviews";
   cart?: GlobalCartItem[];
   onUpdateCartItem?: (item: GlobalCartItem, delta: number) => void;
   onOpenCart?: () => void;
   onParkingUpdated?: () => void;
+  onTabChange?: (tab: "overview" | "parking" | "media" | "reviews") => void;
+  asPage?: boolean;
 }
 
 export default function PlaceAndDealDrawer({
@@ -74,26 +76,39 @@ export default function PlaceAndDealDrawer({
   onRequireAuth,
   onRequireVerifyEmail,
   onClose,
-  initialTab = 'overview',
+  initialTab = "overview",
   cart = [],
   onUpdateCartItem,
   onOpenCart,
   onParkingUpdated,
+  onTabChange,
+  asPage = false,
 }: PlaceAndDealDrawerProps) {
-  const isAr = lang === 'ar';
+  const isAr = lang === "ar";
   const [loading, setLoading] = useState(true);
   const [placeData, setPlaceData] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'parking' | 'media' | 'reviews'
+  const [activeTab, setActiveTabState] = useState<
+    "overview" | "parking" | "media" | "reviews"
   >(initialTab);
 
+  useEffect(() => {
+    setActiveTabState(initialTab);
+  }, [initialTab]);
+
+  const setActiveTab = (
+    nextTab: "overview" | "parking" | "media" | "reviews",
+  ) => {
+    setActiveTabState(nextTab);
+    onTabChange?.(nextTab);
+  };
+
   // Parking reservation state (when viewing a cat-parking spot)
-  const [selectedSlotId, setSelectedSlotId] = useState<string>('');
-  const [vehiclePlate, setVehiclePlate] = useState('AD-58291');
+  const [selectedSlotId, setSelectedSlotId] = useState<string>("");
+  const [vehiclePlate, setVehiclePlate] = useState("AD-58291");
   const [durationHours, setDurationHours] = useState(2);
   const [reservingSlot, setReservingSlot] = useState(false);
   const [parkingFeedback, setParkingFeedback] = useState<{
-    type: 'success' | 'error';
+    type: "success" | "error";
     text: string;
   } | null>(null);
   const [activeParkingReservations, setActiveParkingReservations] = useState<
@@ -106,8 +121,8 @@ export default function PlaceAndDealDrawer({
   const [serviceRating, setServiceRating] = useState(5);
   const [atmosphereRating, setAtmosphereRating] = useState(5);
   const [facilitiesValueRating, setFacilitiesValueRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState('');
-  const [reviewPhotoUrl, setReviewPhotoUrl] = useState('');
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewPhotoUrl, setReviewPhotoUrl] = useState("");
   const [reviewFeedback, setReviewFeedback] = useState<any | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reportedReviewIds, setReportedReviewIds] = useState<string[]>([]);
@@ -116,7 +131,7 @@ export default function PlaceAndDealDrawer({
     if (!placeId) return;
     setLoading(true);
     try {
-      const p = await AwfarApi.getPlaceById(
+      const p = await WherioApi.getPlaceById(
         placeId,
         country,
         lang,
@@ -125,9 +140,9 @@ export default function PlaceAndDealDrawer({
       );
       setPlaceData(p);
 
-      if (p?.categoryId === 'cat-parking' || p?.parkingConfig) {
-        if (initialTab === 'parking') {
-          setActiveTab('parking');
+      if (p?.categoryId === "cat-parking" || p?.parkingConfig) {
+        if (initialTab === "parking") {
+          setActiveTab("parking");
         }
         try {
           const detail = await apiFetch<any>(`/parking/places/${p.id}`);
@@ -153,9 +168,9 @@ export default function PlaceAndDealDrawer({
         setAtmosphereRating(existingRev.subRatings?.atmosphere || 5);
         setFacilitiesValueRating(existingRev.subRatings?.facilitiesValue || 5);
         setReviewComment(
-          isAr ? existingRev.commentAr : existingRev.commentEn || '',
+          isAr ? existingRev.commentAr : existingRev.commentEn || "",
         );
-        setReviewPhotoUrl(existingRev.photos?.[0] || '');
+        setReviewPhotoUrl(existingRev.photos?.[0] || "");
       }
     } catch (e) {
       console.error(e);
@@ -180,27 +195,27 @@ export default function PlaceAndDealDrawer({
         messageAr: string;
         parkingConfig: any;
       }>(`/parking/places/${placeData.id}/reserve`, {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({
           slotId: selectedSlotId || undefined,
           userId: currentUser.id,
-          userName: currentUser.name || 'Wherio Member',
-          userPhone: currentUser.phone || '+971501234567',
+          userName: currentUser.name || "Wherio Member",
+          userPhone: currentUser.phone || "+971501234567",
           vehiclePlate,
           durationHours,
         }),
       });
       setParkingFeedback({
-        type: 'success',
+        type: "success",
         text: isAr ? res.messageAr : res.messageEn,
       });
-      setSelectedSlotId('');
+      setSelectedSlotId("");
       await loadDetails();
       onParkingUpdated?.();
     } catch (err: any) {
       setParkingFeedback({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Reservation failed',
+        type: "error",
+        text: err instanceof Error ? err.message : "Reservation failed",
       });
     } finally {
       setReservingSlot(false);
@@ -209,14 +224,14 @@ export default function PlaceAndDealDrawer({
 
   const handleParkingReservationAction = async (
     reservationId: string,
-    action: 'check-in' | 'cancel',
+    action: "check-in" | "cancel",
     meta?: { slotId?: string; vehiclePlate?: string },
   ) => {
     try {
       const res = await apiFetch<{ messageEn: string; messageAr: string }>(
         `/parking/reservations/${reservationId}/${action}`,
         {
-          method: 'POST',
+          method: "POST",
           body: JSON.stringify({
             placeId: placeData?.id,
             slotId: meta?.slotId,
@@ -225,15 +240,15 @@ export default function PlaceAndDealDrawer({
         },
       );
       setParkingFeedback({
-        type: 'success',
+        type: "success",
         text: isAr ? res.messageAr : res.messageEn,
       });
       await loadDetails();
       onParkingUpdated?.();
     } catch (err: any) {
       setParkingFeedback({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Action failed',
+        type: "error",
+        text: err instanceof Error ? err.message : "Action failed",
       });
     }
   };
@@ -243,7 +258,7 @@ export default function PlaceAndDealDrawer({
     setSubmittingReview(true);
     setReviewFeedback(null);
     try {
-      const res = await AwfarApi.submitVerifiedReview(
+      const res = await WherioApi.submitVerifiedReview(
         {
           placeId: placeData.id,
           userId: currentUser.id,
@@ -256,7 +271,7 @@ export default function PlaceAndDealDrawer({
           photos: reviewPhotoUrl.trim() ? [reviewPhotoUrl.trim()] : [],
           reviewerLat: userCoords.lat,
           reviewerLng: userCoords.lng,
-          tags: ['wherio_verified'],
+          tags: ["wherio_verified"],
         },
         country,
         lang,
@@ -272,11 +287,11 @@ export default function PlaceAndDealDrawer({
 
   const handleReportReview = async (reviewId: string) => {
     try {
-      await AwfarApi.reportReview(
+      await WherioApi.reportReview(
         reviewId,
         {
           reporterUserId: currentUser.id,
-          reason: 'Flagged by community member for moderator review',
+          reason: "Flagged by community member for moderator review",
         },
         country,
         lang,
@@ -290,14 +305,14 @@ export default function PlaceAndDealDrawer({
   const handleRemoveOwnReview = async (reviewId: string) => {
     setSubmittingReview(true);
     try {
-      const res = await AwfarApi.removeOwnReview(
+      const res = await WherioApi.removeOwnReview(
         reviewId,
         currentUser.id,
         country,
         lang,
       );
-      setReviewComment('');
-      setReviewPhotoUrl('');
+      setReviewComment("");
+      setReviewPhotoUrl("");
       setReviewFeedback({
         withdrawnMessage: isAr ? res.messageAr : res.messageEn,
       });
@@ -310,37 +325,43 @@ export default function PlaceAndDealDrawer({
   };
 
   const renderTriStateBadge = (status?: string) => {
-    if (status === 'AVAILABLE') {
+    if (status === "AVAILABLE") {
       return (
         <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800">
           <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-          {isAr ? 'متاح' : 'Available'}
+          {isAr ? "متاح" : "Available"}
         </span>
       );
     }
-    if (status === 'NOT_AVAILABLE') {
+    if (status === "NOT_AVAILABLE") {
       return (
         <span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700">
           <XCircle className="h-3 w-3 text-rose-500" />
-          {isAr ? 'غير متاح' : 'Not Available'}
+          {isAr ? "غير متاح" : "Not Available"}
         </span>
       );
     }
     return (
       <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">
         <HelpCircle className="h-3 w-3 text-amber-600" />
-        {isAr ? 'غير معروف (لا يتم تخمينه)' : 'Unknown (Not Guessed)'}
+        {isAr ? "غير معروف (لا يتم تخمينه)" : "Unknown (Not Guessed)"}
       </span>
     );
   };
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="w-full max-w-[430px] rounded-2xl bg-white p-6 text-center text-xs font-bold text-[#072549]">
+      <div
+        className={
+          asPage
+            ? "flex min-h-[60vh] items-center justify-center p-4"
+            : "fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        }
+      >
+        <div className="w-full max-w-[430px] rounded-2xl border border-slate-200 bg-white p-6 text-center text-xs font-bold text-[#072549] shadow-xs">
           {isAr
-            ? 'جاري تحميل ملف المكان الموثق في ويريو...'
-            : 'Loading Wherio verified place profile...'}
+            ? "جاري تحميل ملف المكان الموثق في ويريو..."
+            : "Loading Wherio verified place profile..."}
         </div>
       </div>
     );
@@ -348,21 +369,30 @@ export default function PlaceAndDealDrawer({
 
   const heroImage =
     placeData?.images?.[0] ||
-    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800';
+    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800";
 
   const existingUserReview = placeData?.reviews?.find(
     (r: any) => r.userId === currentUser.id,
   );
 
   const isUnrated =
-    placeData?.rating?.isUnrated ||
-    (placeData?.rating?.reviewCount ?? 0) === 0;
+    placeData?.rating?.isUnrated || (placeData?.rating?.reviewCount ?? 0) === 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center bg-black/70 backdrop-blur-xs">
+    <div
+      className={
+        asPage
+          ? "w-full"
+          : "fixed inset-0 z-50 flex justify-center bg-black/70 backdrop-blur-xs"
+      }
+    >
       <div
-        dir={isAr ? 'rtl' : 'ltr'}
-        className="relative flex h-full w-full max-w-[430px] flex-col overflow-y-auto bg-slate-50 pb-20 no-scrollbar"
+        dir={isAr ? "rtl" : "ltr"}
+        className={
+          asPage
+            ? "relative flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 pb-6 shadow-2xs"
+            : "relative flex h-full w-full max-w-[430px] flex-col overflow-y-auto bg-slate-50 pb-20 no-scrollbar"
+        }
       >
         {/* Top Hero Image & Floating Controls */}
         <div className="relative h-56 w-full shrink-0 bg-[#072549]">
@@ -376,15 +406,15 @@ export default function PlaceAndDealDrawer({
           <button
             onClick={onClose}
             className={`absolute top-4 flex h-9 w-9 items-center justify-center rounded-xl bg-black/50 text-white backdrop-blur ${
-              isAr ? 'right-4' : 'left-4'
+              isAr ? "right-4" : "left-4"
             }`}
           >
-            <ArrowLeft className={`h-5 w-5 ${isAr ? 'rotate-180' : ''}`} />
+            <ArrowLeft className={`h-5 w-5 ${isAr ? "rotate-180" : ""}`} />
           </button>
 
           <div
             className={`absolute top-4 flex gap-2 ${
-              isAr ? 'left-4' : 'right-4'
+              isAr ? "left-4" : "right-4"
             }`}
           >
             {onToggleFavorite && placeData && (
@@ -392,19 +422,19 @@ export default function PlaceAndDealDrawer({
                 onClick={() => onToggleFavorite(placeData.id)}
                 className={`flex h-9 w-9 items-center justify-center rounded-xl backdrop-blur transition ${
                   isFavorite
-                    ? 'bg-rose-600 text-white'
-                    : 'bg-black/50 text-white hover:bg-black/70'
+                    ? "bg-rose-600 text-white"
+                    : "bg-black/50 text-white hover:bg-black/70"
                 }`}
-                title={isAr ? 'إضافة للمفضلة' : 'Save to Favorites'}
+                title={isAr ? "إضافة للمفضلة" : "Save to Favorites"}
               >
                 <Heart
-                  className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`}
+                  className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`}
                 />
               </button>
             )}
             <button
               onClick={() => {
-                if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
                   navigator.clipboard.writeText(window.location.href);
                 }
               }}
@@ -417,12 +447,12 @@ export default function PlaceAndDealDrawer({
           {/* Data Completeness Badge */}
           <div
             className={`absolute bottom-3 flex items-center gap-1.5 rounded-xl bg-[#072549]/90 px-2.5 py-1 text-[10px] font-extrabold text-white backdrop-blur ${
-              isAr ? 'left-4' : 'right-4'
+              isAr ? "left-4" : "right-4"
             }`}
           >
             <ShieldCheck className="h-3.5 w-3.5 text-[#00D2B4]" />
             <span>
-              {isAr ? 'اكتمال البيانات:' : 'Completeness:'}{' '}
+              {isAr ? "اكتمال البيانات:" : "Completeness:"}{" "}
               {placeData?.dataQuality?.completenessScore ?? 92}%
             </span>
           </div>
@@ -441,27 +471,27 @@ export default function PlaceAndDealDrawer({
             )}
             {placeData?.brandName && (
               <span className="rounded-lg bg-[#00B89C]/10 px-2 py-0.5 text-[10px] font-bold text-[#008891]">
-                {isAr ? 'العلامة:' : 'Brand:'} {placeData.brandName}
+                {isAr ? "العلامة:" : "Brand:"} {placeData.brandName}
               </span>
             )}
             {placeData?.openNowStatus && (
               <span
                 className={`rounded-lg px-2 py-0.5 text-[10px] font-extrabold ${
-                  placeData.openNowStatus === 'OPEN'
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : placeData.openNowStatus === 'CLOSED'
-                      ? 'bg-rose-50 text-rose-700'
-                      : 'bg-amber-50 text-amber-700'
+                  placeData.openNowStatus === "OPEN"
+                    ? "bg-emerald-50 text-emerald-700"
+                    : placeData.openNowStatus === "CLOSED"
+                      ? "bg-rose-50 text-rose-700"
+                      : "bg-amber-50 text-amber-700"
                 }`}
               >
                 {placeData.openNowLabel ||
-                  (placeData.openNowStatus === 'OPEN'
+                  (placeData.openNowStatus === "OPEN"
                     ? isAr
-                      ? 'مفتوح الآن'
-                      : 'Open Now'
+                      ? "مفتوح الآن"
+                      : "Open Now"
                     : isAr
-                      ? 'مغلق الآن'
-                      : 'Closed')}
+                      ? "مغلق الآن"
+                      : "Closed")}
               </span>
             )}
           </div>
@@ -481,20 +511,20 @@ export default function PlaceAndDealDrawer({
             </div>
 
             <button
-              onClick={() => setActiveTab('reviews')}
+              onClick={() => setActiveTab("reviews")}
               className="flex items-center gap-1 font-extrabold text-[#072549] underline"
             >
               <Star className="h-3.5 w-3.5 fill-[#FF991F] text-[#FF991F]" />
               {isUnrated ? (
                 <span className="text-[11px] font-bold text-slate-500">
-                  {isAr ? 'بدون تقييم بعد' : 'Unrated'}
+                  {isAr ? "بدون تقييم بعد" : "Unrated"}
                 </span>
               ) : (
                 <>
                   <span>{placeData?.rating?.avgRating}</span>
                   <span className="text-[11px] font-normal text-slate-500">
-                    ({placeData?.rating?.reviewCount}{' '}
-                    {isAr ? 'تقييم ويريو' : 'Wherio Reviews'})
+                    ({placeData?.rating?.reviewCount}{" "}
+                    {isAr ? "تقييم ويريو" : "Wherio Reviews"})
                   </span>
                 </>
               )}
@@ -505,30 +535,30 @@ export default function PlaceAndDealDrawer({
           {placeData?.parkingConfig && (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2">
               <div className="flex items-center gap-2">
-                {placeData.parkingConfig.managementMode === 'CAMERA_AI' ? (
+                {placeData.parkingConfig.managementMode === "CAMERA_AI" ? (
                   <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
                     <Camera className="h-3 w-3" />
-                    {isAr ? 'كاميرا ذكية مباشر' : 'Camera AI Live'}
+                    {isAr ? "كاميرا ذكية مباشر" : "Camera AI Live"}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 rounded-lg bg-amber-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
                     <Wrench className="h-3 w-3" />
-                    {isAr ? 'إدارة يدوية' : 'Manual Mode'}
+                    {isAr ? "إدارة يدوية" : "Manual Mode"}
                   </span>
                 )}
                 <span className="text-xs font-extrabold text-[#072549]">
-                  {placeData.parkingConfig.availableSlotsCount} /{' '}
-                  {placeData.parkingConfig.totalSlots}{' '}
-                  {isAr ? 'موقف متاح الآن' : 'Slots Free'}
+                  {placeData.parkingConfig.availableSlotsCount} /{" "}
+                  {placeData.parkingConfig.totalSlots}{" "}
+                  {isAr ? "موقف متاح الآن" : "Slots Free"}
                 </span>
               </div>
               <button
                 type="button"
-                onClick={() => setActiveTab('parking')}
+                onClick={() => setActiveTab("parking")}
                 className="inline-flex items-center gap-1 rounded-lg bg-[#072549] px-2.5 py-1 text-[10px] font-extrabold text-white hover:bg-[#0c3566]"
               >
                 <Car className="h-3 w-3 text-[#00D2B4]" />
-                {isAr ? 'عرض المواقف والحجز' : 'Live Slots & Reserve'}
+                {isAr ? "عرض المواقف والحجز" : "Live Slots & Reserve"}
               </button>
             </div>
           )}
@@ -537,73 +567,73 @@ export default function PlaceAndDealDrawer({
         {/* Wherio Navigation Tabs */}
         <div className="sticky top-0 z-10 flex border-b border-slate-200 bg-white px-2 text-xs font-extrabold">
           <button
-            onClick={() => setActiveTab('overview')}
+            onClick={() => setActiveTab("overview")}
             className={`flex-1 border-b-2 py-3 text-center transition ${
-              activeTab === 'overview'
-                ? 'border-[#0072DC] text-[#072549]'
-                : 'border-transparent text-slate-400'
+              activeTab === "overview"
+                ? "border-[#0072DC] text-[#072549]"
+                : "border-transparent text-slate-400"
             }`}
           >
-            {isAr ? 'التجهيزات والمواعيد' : 'Facilities & Hours'}
+            {isAr ? "التجهيزات والمواعيد" : "Facilities & Hours"}
           </button>
           {placeData?.parkingConfig && (
             <button
-              onClick={() => setActiveTab('parking')}
+              onClick={() => setActiveTab("parking")}
               className={`flex-1 border-b-2 py-3 text-center transition ${
-                activeTab === 'parking'
-                  ? 'border-[#00B89C] text-[#072549]'
-                  : 'border-transparent text-slate-400'
+                activeTab === "parking"
+                  ? "border-[#00B89C] text-[#072549]"
+                  : "border-transparent text-slate-400"
               }`}
             >
               <span className="inline-flex items-center justify-center gap-1">
                 <Car className="h-3.5 w-3.5 text-[#00B89C]" />
-                {isAr ? 'حجز موقف' : 'Slots & Reserve'}
+                {isAr ? "حجز موقف" : "Slots & Reserve"}
               </span>
             </button>
           )}
           <button
-            onClick={() => setActiveTab('media')}
+            onClick={() => setActiveTab("media")}
             className={`flex-1 border-b-2 py-3 text-center transition ${
-              activeTab === 'media'
-                ? 'border-[#0072DC] text-[#072549]'
-                : 'border-transparent text-slate-400'
+              activeTab === "media"
+                ? "border-[#0072DC] text-[#072549]"
+                : "border-transparent text-slate-400"
             }`}
           >
-            {isAr ? 'المنيو والمتجر' : 'Menus & Posters'}
+            {isAr ? "المنيو والمتجر" : "Menus & Posters"}
           </button>
           <button
-            onClick={() => setActiveTab('reviews')}
+            onClick={() => setActiveTab("reviews")}
             className={`flex-1 border-b-2 py-3 text-center transition ${
-              activeTab === 'reviews'
-                ? 'border-[#0072DC] text-[#072549]'
-                : 'border-transparent text-slate-400'
+              activeTab === "reviews"
+                ? "border-[#0072DC] text-[#072549]"
+                : "border-transparent text-slate-400"
             }`}
           >
-            {isAr ? 'التقييمات الموثقة' : 'Verified Reviews'}
+            {isAr ? "التقييمات الموثقة" : "Verified Reviews"}
           </button>
         </div>
 
         {/* TAB 1: OVERVIEW, TRI-STATE ATTRIBUTES & MULTI-SHIFT HOURS */}
-        {activeTab === 'overview' && placeData && (
+        {activeTab === "overview" && placeData && (
           <div className="space-y-3 p-4">
             {/* Pricing, Entry Conditions & Venue Policies (Explicitly handles UNKNOWN) */}
             <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xs">
               <h3 className="text-xs font-extrabold text-[#072549]">
                 {isAr
-                  ? 'الفئة السعرية وشروط الدخول وسياسات المكان:'
-                  : 'Price Tier, Entry Conditions & Venue Policies:'}
+                  ? "الفئة السعرية وشروط الدخول وسياسات المكان:"
+                  : "Price Tier, Entry Conditions & Venue Policies:"}
               </h3>
               <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded-xl bg-slate-50 p-2.5">
                   <p className="text-[10px] font-bold text-slate-400 uppercase">
-                    {isAr ? 'الفئة السعرية' : 'Price Range'}
+                    {isAr ? "الفئة السعرية" : "Price Range"}
                   </p>
                   <p className="mt-0.5 font-extrabold text-[#072549]">
-                    {placeData.priceRange === 'UNKNOWN' ? (
+                    {placeData.priceRange === "UNKNOWN" ? (
                       <span className="text-amber-700">
                         {isAr
-                          ? 'غير متاح في البيانات'
-                          : 'Unavailable (Not Guessed)'}
+                          ? "غير متاح في البيانات"
+                          : "Unavailable (Not Guessed)"}
                       </span>
                     ) : (
                       placeData.priceRange
@@ -612,14 +642,14 @@ export default function PlaceAndDealDrawer({
                 </div>
                 <div className="rounded-xl bg-slate-50 p-2.5">
                   <p className="text-[10px] font-bold text-slate-400 uppercase">
-                    {isAr ? 'رسوم الدخول' : 'Entry Fee Status'}
+                    {isAr ? "رسوم الدخول" : "Entry Fee Status"}
                   </p>
                   <p className="mt-0.5 font-extrabold text-[#072549]">
-                    {placeData.entryFeeStatus === 'UNKNOWN' ? (
+                    {placeData.entryFeeStatus === "UNKNOWN" ? (
                       <span className="text-amber-700">
                         {isAr
-                          ? 'غير متاح في البيانات'
-                          : 'Unavailable (Not Guessed)'}
+                          ? "غير متاح في البيانات"
+                          : "Unavailable (Not Guessed)"}
                       </span>
                     ) : (
                       placeData.entryFeeStatus
@@ -628,21 +658,21 @@ export default function PlaceAndDealDrawer({
                 </div>
               </div>
               <p className="mt-2 text-[11px] text-slate-600">
-                <strong>{isAr ? 'تفاصيل الدخول:' : 'Entry Details:'}</strong>{' '}
+                <strong>{isAr ? "تفاصيل الدخول:" : "Entry Details:"}</strong>{" "}
                 {placeData.entryFeeDetails}
               </p>
               <p className="mt-1 text-[11px] text-slate-600">
-                <strong>{isAr ? 'الفئة العمرية:' : 'Age Policy:'}</strong>{' '}
+                <strong>{isAr ? "الفئة العمرية:" : "Age Policy:"}</strong>{" "}
                 {placeData.ageRestriction}
               </p>
               {placeData.policies && (
                 <div className="mt-2 flex flex-wrap gap-1.5 border-t border-slate-100 pt-2 text-[10px]">
                   <span className="rounded-lg bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">
-                    {isAr ? 'التدخين:' : 'Smoking:'}{' '}
+                    {isAr ? "التدخين:" : "Smoking:"}{" "}
                     {placeData.policies.smokingPolicy}
                   </span>
                   <span className="rounded-lg bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">
-                    {isAr ? 'الحيوانات الأليفة:' : 'Pets:'}{' '}
+                    {isAr ? "الحيوانات الأليفة:" : "Pets:"}{" "}
                     {placeData.policies.petsPolicy}
                   </span>
                   <span className="rounded-lg bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">
@@ -657,50 +687,50 @@ export default function PlaceAndDealDrawer({
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-extrabold text-[#072549]">
                   {isAr
-                    ? 'التجهيزات العملية (متاح / غير متاح / غير معروف):'
-                    : 'Practical Facilities & Attributes:'}
+                    ? "التجهيزات العملية (متاح / غير متاح / غير معروف):"
+                    : "Practical Facilities & Attributes:"}
                 </h3>
               </div>
               <div className="mt-2.5 space-y-2 text-xs">
                 {[
                   {
-                    labelEn: 'On-Site Parking',
-                    labelAr: 'مواقف سيارات (Parking)',
+                    labelEn: "On-Site Parking",
+                    labelAr: "مواقف سيارات (Parking)",
                     val: placeData.attributes?.parking,
                   },
                   {
-                    labelEn: 'Valet Parking Service',
-                    labelAr: 'خدمة صف السيارات (فاليه - Valet)',
+                    labelEn: "Valet Parking Service",
+                    labelAr: "خدمة صف السيارات (فاليه - Valet)",
                     val: placeData.attributes?.valetParking,
                   },
                   {
-                    labelEn: 'Kids Friendly',
-                    labelAr: 'مناسب للأطفال (Kids Friendly)',
+                    labelEn: "Kids Friendly",
+                    labelAr: "مناسب للأطفال (Kids Friendly)",
                     val: placeData.attributes?.kidsFriendly,
                   },
                   {
-                    labelEn: 'Wheelchair Accessible',
-                    labelAr: 'مجهز للكراسي المتحركة',
+                    labelEn: "Wheelchair Accessible",
+                    labelAr: "مجهز للكراسي المتحركة",
                     val: placeData.attributes?.wheelchairAccessible,
                   },
                   {
-                    labelEn: 'Outdoor Seating',
-                    labelAr: 'جلسات خارجية (Outdoor)',
+                    labelEn: "Outdoor Seating",
+                    labelAr: "جلسات خارجية (Outdoor)",
                     val: placeData.attributes?.outdoorSeating,
                   },
                   {
-                    labelEn: 'Family Seating',
-                    labelAr: 'جلسات عائلية',
+                    labelEn: "Family Seating",
+                    labelAr: "جلسات عائلية",
                     val: placeData.attributes?.familySeating,
                   },
                   {
-                    labelEn: 'Wi-Fi Internet',
-                    labelAr: 'واي فاي (Wi-Fi)',
+                    labelEn: "Wi-Fi Internet",
+                    labelAr: "واي فاي (Wi-Fi)",
                     val: placeData.attributes?.wifi,
                   },
                   {
-                    labelEn: 'Prior Reservation Required',
-                    labelAr: 'يشترط حجز مسبق',
+                    labelEn: "Prior Reservation Required",
+                    labelAr: "يشترط حجز مسبق",
                     val: placeData.attributes?.reservationRequired,
                   },
                 ].map((attr, idx) => (
@@ -722,8 +752,8 @@ export default function PlaceAndDealDrawer({
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-extrabold text-[#072549]">
                   {isAr
-                    ? 'فترات وساعات العمل المتعددة والاستثناءات:'
-                    : 'Multi-Shift Working Hours & Exceptions:'}
+                    ? "فترات وساعات العمل المتعددة والاستثناءات:"
+                    : "Multi-Shift Working Hours & Exceptions:"}
                 </h3>
                 {placeData.openNowLabel && (
                   <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
@@ -736,8 +766,8 @@ export default function PlaceAndDealDrawer({
                   ? placeData.shifts
                   : [
                       {
-                        labelEn: 'Daily Shift',
-                        labelAr: 'الفترة اليومية',
+                        labelEn: "Daily Shift",
+                        labelAr: "الفترة اليومية",
                         open: placeData.openingHours?.open,
                         close: placeData.openingHours?.close,
                       },
@@ -760,8 +790,8 @@ export default function PlaceAndDealDrawer({
                 <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50/70 p-2.5 text-[11px] text-amber-900">
                   <p className="font-extrabold">
                     {isAr
-                      ? 'استثناءات الأيام والمواسم الخاصة:'
-                      : 'Special Day Exceptions:'}
+                      ? "استثناءات الأيام والمواسم الخاصة:"
+                      : "Special Day Exceptions:"}
                   </p>
                   <ul className="mt-1 list-inside list-disc space-y-0.5">
                     {(Array.isArray(placeData.specialExceptions)
@@ -784,24 +814,26 @@ export default function PlaceAndDealDrawer({
                 }
               }}
               className={`rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xs ${
-                !isAuthenticated ? 'cursor-pointer' : ''
+                !isAuthenticated ? "cursor-pointer" : ""
               }`}
             >
               <h3 className="text-xs font-extrabold text-[#072549]">
-                {isAr ? 'العنوان والتواصل المباشر:' : 'Location & Direct Contact:'}
+                {isAr
+                  ? "العنوان والتواصل المباشر:"
+                  : "Location & Direct Contact:"}
               </h3>
               <p className="mt-1 text-xs text-slate-600">{placeData.address}</p>
 
               <div className="mt-2.5 flex flex-wrap gap-2 text-[11px]">
                 <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 font-bold text-slate-700">
                   <Car className="h-3.5 w-3.5 text-[#0072DC]" />
-                  {placeData.distance?.driveTimeMinutes}{' '}
-                  {isAr ? 'دقائق بالسيارة' : 'min drive'}
+                  {placeData.distance?.driveTimeMinutes}{" "}
+                  {isAr ? "دقائق بالسيارة" : "min drive"}
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 font-medium text-slate-700">
                   <Footprints className="h-3.5 w-3.5" />
-                  {placeData.distance?.walkTimeMinutes}{' '}
-                  {isAr ? 'دقيقة مشي' : 'min walk'}
+                  {placeData.distance?.walkTimeMinutes}{" "}
+                  {isAr ? "دقيقة مشي" : "min walk"}
                 </span>
               </div>
 
@@ -811,7 +843,7 @@ export default function PlaceAndDealDrawer({
                   className="flex items-center justify-center gap-1.5 rounded-xl bg-[#00B89C] py-2.5 text-xs font-extrabold text-white"
                 >
                   <Phone className="h-3.5 w-3.5" />
-                  {isAr ? 'اتصال مباشر' : 'Call Venue'}
+                  {isAr ? "اتصال مباشر" : "Call Venue"}
                 </a>
                 <a
                   href={placeData.coordinates?.googleMapsUrl}
@@ -820,7 +852,7 @@ export default function PlaceAndDealDrawer({
                   className="flex items-center justify-center gap-1.5 rounded-xl bg-[#072549] py-2.5 text-xs font-extrabold text-white"
                 >
                   <MapPin className="h-3.5 w-3.5" />
-                  {isAr ? 'خرائط جوجل' : 'Google Maps'}
+                  {isAr ? "خرائط جوجل" : "Google Maps"}
                 </a>
               </div>
               {placeData.contact?.websiteUrl && (
@@ -831,7 +863,7 @@ export default function PlaceAndDealDrawer({
                   className="mt-2 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2 text-xs font-bold text-[#0072DC]"
                 >
                   <Globe className="h-3.5 w-3.5" />
-                  {isAr ? 'الموقع الرسمي للمكان' : 'Official Website'}
+                  {isAr ? "الموقع الرسمي للمكان" : "Official Website"}
                   <ExternalLink className="h-3 w-3" />
                 </a>
               )}
@@ -840,18 +872,18 @@ export default function PlaceAndDealDrawer({
         )}
 
         {/* TAB: SMART PARKING LIVE SLOTS & RESERVATION */}
-        {activeTab === 'parking' && placeData?.parkingConfig && (
+        {activeTab === "parking" && placeData?.parkingConfig && (
           <div className="space-y-3 p-4">
             {parkingFeedback && (
               <div
                 className={`flex items-center justify-between rounded-2xl border p-3 text-xs font-bold ${
-                  parkingFeedback.type === 'success'
-                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-                    : 'border-rose-300 bg-rose-50 text-rose-900'
+                  parkingFeedback.type === "success"
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+                    : "border-rose-300 bg-rose-50 text-rose-900"
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  {parkingFeedback.type === 'success' ? (
+                  {parkingFeedback.type === "success" ? (
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
                   ) : (
                     <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
@@ -863,7 +895,7 @@ export default function PlaceAndDealDrawer({
                   onClick={() => setParkingFeedback(null)}
                   className="text-[11px] underline"
                 >
-                  {isAr ? 'إغلاق' : 'Dismiss'}
+                  {isAr ? "إغلاق" : "Dismiss"}
                 </button>
               </div>
             )}
@@ -872,19 +904,19 @@ export default function PlaceAndDealDrawer({
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#072549] text-white shadow-sm">
               <div className="flex items-center justify-between border-b border-white/10 px-3.5 py-2.5">
                 <div className="flex items-center gap-2">
-                  {placeData.parkingConfig.managementMode === 'CAMERA_AI' ? (
+                  {placeData.parkingConfig.managementMode === "CAMERA_AI" ? (
                     <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/20 px-2 py-0.5 text-[10px] font-extrabold text-emerald-300">
                       <Camera className="h-3.5 w-3.5" />
                       {isAr
-                        ? 'رصد تلقائي بالكاميرا والذكاء الاصطناعي'
-                        : 'Camera AI Auto-Detection'}
+                        ? "رصد تلقائي بالكاميرا والذكاء الاصطناعي"
+                        : "Camera AI Auto-Detection"}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-lg bg-amber-500/20 px-2 py-0.5 text-[10px] font-extrabold text-amber-300">
                       <Wrench className="h-3.5 w-3.5" />
                       {isAr
-                        ? 'إدارة يدوية من مشرف المواقف'
-                        : 'Manual Operator Slot Control'}
+                        ? "إدارة يدوية من مشرف المواقف"
+                        : "Manual Operator Slot Control"}
                     </span>
                   )}
                 </div>
@@ -894,7 +926,7 @@ export default function PlaceAndDealDrawer({
                   className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-1 text-[10px] font-bold text-slate-200 hover:bg-white/20"
                 >
                   <RefreshCw className="h-3 w-3" />
-                  {isAr ? 'تحديث' : 'Sync'}
+                  {isAr ? "تحديث" : "Sync"}
                 </button>
               </div>
 
@@ -902,7 +934,7 @@ export default function PlaceAndDealDrawer({
                 <div className="grid grid-cols-4 gap-2 text-center">
                   <div className="rounded-xl bg-white/10 p-2">
                     <span className="block text-[10px] text-slate-300">
-                      {isAr ? 'الإجمالي' : 'Total'}
+                      {isAr ? "الإجمالي" : "Total"}
                     </span>
                     <span className="text-base font-black text-white">
                       {placeData.parkingConfig.totalSlots}
@@ -910,7 +942,7 @@ export default function PlaceAndDealDrawer({
                   </div>
                   <div className="rounded-xl bg-emerald-500/20 p-2">
                     <span className="block text-[10px] text-emerald-300">
-                      {isAr ? 'متاح' : 'Available'}
+                      {isAr ? "متاح" : "Available"}
                     </span>
                     <span className="text-base font-black text-emerald-300">
                       {placeData.parkingConfig.availableSlotsCount}
@@ -918,7 +950,7 @@ export default function PlaceAndDealDrawer({
                   </div>
                   <div className="rounded-xl bg-amber-500/20 p-2">
                     <span className="block text-[10px] text-amber-300">
-                      {isAr ? 'محجوز' : 'Reserved'}
+                      {isAr ? "محجوز" : "Reserved"}
                     </span>
                     <span className="text-base font-black text-amber-300">
                       {placeData.parkingConfig.reservedSlotsCount}
@@ -926,7 +958,7 @@ export default function PlaceAndDealDrawer({
                   </div>
                   <div className="rounded-xl bg-rose-500/20 p-2">
                     <span className="block text-[10px] text-rose-300">
-                      {isAr ? 'مشغول' : 'Occupied'}
+                      {isAr ? "مشغول" : "Occupied"}
                     </span>
                     <span className="text-base font-black text-rose-300">
                       {placeData.parkingConfig.occupiedSlotsCount}
@@ -936,20 +968,20 @@ export default function PlaceAndDealDrawer({
 
                 <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-300">
                   <span>
-                    {isAr ? 'التعرفة:' : 'Rate:'}{' '}
+                    {isAr ? "التعرفة:" : "Rate:"}{" "}
                     <strong className="text-white">
                       {placeData.parkingConfig.hourlyRate === 0
                         ? isAr
-                          ? 'مجاناً'
-                          : 'Free'
+                          ? "مجاناً"
+                          : "Free"
                         : `${placeData.parkingConfig.hourlyRate} ${placeData.parkingConfig.currency} / hr`}
                     </strong>
                   </span>
                   <span>
-                    {isAr ? 'مهلة الوصول للحجز:' : 'Arrival Grace Lock:'}{' '}
+                    {isAr ? "مهلة الوصول للحجز:" : "Arrival Grace Lock:"}{" "}
                     <strong className="text-[#00D2B4]">
-                      {placeData.parkingConfig.gracePeriodMinutes || 15}{' '}
-                      {isAr ? 'دقيقة' : 'min'}
+                      {placeData.parkingConfig.gracePeriodMinutes || 15}{" "}
+                      {isAr ? "دقيقة" : "min"}
                     </strong>
                   </span>
                 </div>
@@ -961,8 +993,8 @@ export default function PlaceAndDealDrawer({
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-extrabold text-[#072549]">
                   {isAr
-                    ? 'خريطة المواقف الحية (اختر موقفاً متاحاً للحجز):'
-                    : 'Live Parking Slot Grid (Tap an available slot to reserve):'}
+                    ? "خريطة المواقف الحية (اختر موقفاً متاحاً للحجز):"
+                    : "Live Parking Slot Grid (Tap an available slot to reserve):"}
                 </h3>
                 <span className="text-[10px] font-bold text-slate-400">
                   {selectedSlotId
@@ -970,16 +1002,16 @@ export default function PlaceAndDealDrawer({
                       ? `المحدد: ${selectedSlotId}`
                       : `Selected: ${selectedSlotId}`
                     : isAr
-                      ? 'تعيين تلقائي أو اختر'
-                      : 'Auto or tap slot'}
+                      ? "تعيين تلقائي أو اختر"
+                      : "Auto or tap slot"}
                 </span>
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {(placeData.parkingConfig.slots || []).map((slot: any) => {
-                  const isAvailable = slot.status === 'AVAILABLE';
-                  const isReserved = slot.status === 'RESERVED';
-                  const isOccupied = slot.status === 'OCCUPIED';
+                  const isAvailable = slot.status === "AVAILABLE";
+                  const isReserved = slot.status === "RESERVED";
+                  const isOccupied = slot.status === "OCCUPIED";
                   const isSelected = selectedSlotId === slot.slotId;
 
                   return (
@@ -988,38 +1020,34 @@ export default function PlaceAndDealDrawer({
                       type="button"
                       disabled={!isAvailable}
                       onClick={() =>
-                        setSelectedSlotId(
-                          isSelected ? '' : String(slot.slotId),
-                        )
+                        setSelectedSlotId(isSelected ? "" : String(slot.slotId))
                       }
                       className={`flex flex-col items-start justify-between rounded-xl border p-2 text-left transition ${
                         isSelected
-                          ? 'border-[#0072DC] bg-[#0072DC]/10 ring-2 ring-[#0072DC]'
+                          ? "border-[#0072DC] bg-[#0072DC]/10 ring-2 ring-[#0072DC]"
                           : isAvailable
-                            ? 'border-emerald-200 bg-emerald-50/60 hover:border-emerald-400'
+                            ? "border-emerald-200 bg-emerald-50/60 hover:border-emerald-400"
                             : isReserved
-                              ? 'cursor-not-allowed border-amber-200 bg-amber-50/70 opacity-85'
-                              : 'cursor-not-allowed border-rose-200 bg-rose-50/60 opacity-75'
+                              ? "cursor-not-allowed border-amber-200 bg-amber-50/70 opacity-85"
+                              : "cursor-not-allowed border-rose-200 bg-rose-50/60 opacity-75"
                       }`}
                     >
                       <div className="flex w-full items-center justify-between">
                         <span className="font-mono text-[11px] font-black text-[#072549]">
                           #{slot.slotNumber}
                         </span>
-                        {slot.type === 'EV_CHARGING' ? (
+                        {slot.type === "EV_CHARGING" ? (
                           <Zap className="h-3.5 w-3.5 text-emerald-600" />
-                        ) : slot.type === 'VIP' ? (
+                        ) : slot.type === "VIP" ? (
                           <Crown className="h-3.5 w-3.5 text-amber-600" />
-                        ) : slot.type === 'ACCESSIBLE' ? (
+                        ) : slot.type === "ACCESSIBLE" ? (
                           <Accessibility className="h-3.5 w-3.5 text-sky-600" />
                         ) : isReserved ? (
                           <Lock className="h-3.5 w-3.5 text-amber-600" />
                         ) : (
                           <Car
                             className={`h-3.5 w-3.5 ${
-                              isAvailable
-                                ? 'text-emerald-600'
-                                : 'text-rose-600'
+                              isAvailable ? "text-emerald-600" : "text-rose-600"
                             }`}
                           />
                         )}
@@ -1030,23 +1058,23 @@ export default function PlaceAndDealDrawer({
                       <span
                         className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-extrabold ${
                           isAvailable
-                            ? 'bg-emerald-100 text-emerald-800'
+                            ? "bg-emerald-100 text-emerald-800"
                             : isReserved
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-rose-100 text-rose-800'
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-rose-100 text-rose-800"
                         }`}
                       >
                         {isAvailable
                           ? isAr
-                            ? 'متاح'
-                            : 'FREE'
+                            ? "متاح"
+                            : "FREE"
                           : isReserved
                             ? isAr
-                              ? 'محجوز'
-                              : 'RESERVED'
+                              ? "محجوز"
+                              : "RESERVED"
                             : isAr
-                              ? 'مشغول'
-                              : 'OCCUPIED'}
+                              ? "مشغول"
+                              : "OCCUPIED"}
                       </span>
                     </button>
                   );
@@ -1063,8 +1091,8 @@ export default function PlaceAndDealDrawer({
                 <h4 className="flex items-center gap-1.5 text-xs font-extrabold text-[#072549]">
                   <Lock className="h-3.5 w-3.5 text-[#00B89C]" />
                   {isAr
-                    ? 'حجز موقف فوري (قفل الموقف لمدة ١٥ دقيقة للوصول)'
-                    : 'Reserve Parking Slot (15-Min Arrival Lock)'}
+                    ? "حجز موقف فوري (قفل الموقف لمدة ١٥ دقيقة للوصول)"
+                    : "Reserve Parking Slot (15-Min Arrival Lock)"}
                 </h4>
                 {selectedSlotId && (
                   <span className="rounded-lg bg-[#0072DC]/10 px-2 py-0.5 font-mono text-[10px] font-extrabold text-[#0072DC]">
@@ -1076,7 +1104,7 @@ export default function PlaceAndDealDrawer({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500">
-                    {isAr ? 'رقم لوحة المركبة' : 'Vehicle Plate Number'}
+                    {isAr ? "رقم لوحة المركبة" : "Vehicle Plate Number"}
                   </label>
                   <input
                     type="text"
@@ -1089,7 +1117,7 @@ export default function PlaceAndDealDrawer({
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500">
-                    {isAr ? 'مدة الوقوف (ساعات)' : 'Duration (Hours)'}
+                    {isAr ? "مدة الوقوف (ساعات)" : "Duration (Hours)"}
                   </label>
                   <select
                     value={durationHours}
@@ -1098,8 +1126,8 @@ export default function PlaceAndDealDrawer({
                   >
                     {[1, 2, 3, 4, 6, 8].map((h) => (
                       <option key={h} value={h}>
-                        {h} {isAr ? 'ساعات' : 'Hours'} (
-                        {h * (placeData.parkingConfig.hourlyRate || 0)}{' '}
+                        {h} {isAr ? "ساعات" : "Hours"} (
+                        {h * (placeData.parkingConfig.hourlyRate || 0)}{" "}
                         {placeData.parkingConfig.currency})
                       </option>
                     ))}
@@ -1119,30 +1147,30 @@ export default function PlaceAndDealDrawer({
                 <span>
                   {reservingSlot
                     ? isAr
-                      ? 'جاري قفل وتأكيد الموقف...'
-                      : 'Locking & Reserving Slot...'
+                      ? "جاري قفل وتأكيد الموقف..."
+                      : "Locking & Reserving Slot..."
                     : selectedSlotId
                       ? isAr
                         ? `تأكيد حجز الموقف ${selectedSlotId}`
                         : `Confirm Reservation for Slot ${selectedSlotId}`
                       : isAr
-                        ? 'حجز أقرب موقف متاح تلقائياً'
-                        : 'Auto-Assign & Reserve Best Available Slot'}
+                        ? "حجز أقرب موقف متاح تلقائياً"
+                        : "Auto-Assign & Reserve Best Available Slot"}
                 </span>
               </button>
             </form>
 
             {/* Active Reservations for this Parking Spot */}
-            {activeParkingReservations.filter((r) => r.status === 'RESERVED')
+            {activeParkingReservations.filter((r) => r.status === "RESERVED")
               .length > 0 && (
               <div className="space-y-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5">
                 <h4 className="text-xs font-extrabold text-amber-950">
                   {isAr
-                    ? 'الحجوزات النشطة في هذا الموقف (تسجيل وصول / إلغاء):'
-                    : 'Active Slot Reservations (Check-In on Arrival or Cancel):'}
+                    ? "الحجوزات النشطة في هذا الموقف (تسجيل وصول / إلغاء):"
+                    : "Active Slot Reservations (Check-In on Arrival or Cancel):"}
                 </h4>
                 {activeParkingReservations
-                  .filter((r) => r.status === 'RESERVED')
+                  .filter((r) => r.status === "RESERVED")
                   .map((res) => (
                     <div
                       key={res.id}
@@ -1151,15 +1179,15 @@ export default function PlaceAndDealDrawer({
                       <div>
                         <span className="font-mono font-black text-[#072549]">
                           {res.slotId}
-                        </span>{' '}
+                        </span>{" "}
                         <span className="text-slate-600">
                           • {res.vehiclePlate} ({res.userName})
                         </span>
                         <p className="text-[10px] text-amber-700">
-                          {isAr ? 'ينتهي قفل الوصول:' : 'Grace lock expires:'}{' '}
+                          {isAr ? "ينتهي قفل الوصول:" : "Grace lock expires:"}{" "}
                           {new Date(res.graceExpiresAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </p>
                       </div>
@@ -1167,26 +1195,26 @@ export default function PlaceAndDealDrawer({
                         <button
                           type="button"
                           onClick={() =>
-                            handleParkingReservationAction(res.id, 'check-in', {
+                            handleParkingReservationAction(res.id, "check-in", {
                               slotId: res.slotId,
                               vehiclePlate: res.vehiclePlate,
                             })
                           }
                           className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[10px] font-extrabold text-white hover:bg-emerald-700"
                         >
-                          {isAr ? 'تسجيل دخول المركبة' : 'Check-In'}
+                          {isAr ? "تسجيل دخول المركبة" : "Check-In"}
                         </button>
                         <button
                           type="button"
                           onClick={() =>
-                            handleParkingReservationAction(res.id, 'cancel', {
+                            handleParkingReservationAction(res.id, "cancel", {
                               slotId: res.slotId,
                               vehiclePlate: res.vehiclePlate,
                             })
                           }
                           className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-100"
                         >
-                          {isAr ? 'إلغاء' : 'Cancel'}
+                          {isAr ? "إلغاء" : "Cancel"}
                         </button>
                       </div>
                     </div>
@@ -1197,7 +1225,7 @@ export default function PlaceAndDealDrawer({
         )}
 
         {/* TAB 2: ORDERABLE STORE/MENU ITEMS + MENU GALLERY & ANNOUNCED POSTERS */}
-        {activeTab === 'media' && placeData && (
+        {activeTab === "media" && placeData && (
           <div className="space-y-3 p-4">
             {/* Orderable Menu & Store Items (Integrated directly inside Menus & Posters) */}
             {Array.isArray(placeData.catalogProducts) &&
@@ -1211,13 +1239,13 @@ export default function PlaceAndDealDrawer({
                       <div>
                         <h3 className="text-xs font-extrabold text-[#072549]">
                           {isAr
-                            ? 'قائمة الطلب المباشر والمتجر الإلكتروني'
-                            : 'Orderable Menu & Store Items'}
+                            ? "قائمة الطلب المباشر والمتجر الإلكتروني"
+                            : "Orderable Menu & Store Items"}
                         </h3>
                         <p className="text-[10px] text-slate-500">
                           {isAr
-                            ? 'أضف المنتجات للسلة الموحدة في أعلى التطبيق مع حساب سعة مركبة التوصيل'
-                            : 'Add items to the global header cart with 3D delivery vehicle sizing'}
+                            ? "أضف المنتجات للسلة الموحدة في أعلى التطبيق مع حساب سعة مركبة التوصيل"
+                            : "Add items to the global header cart with 3D delivery vehicle sizing"}
                         </p>
                       </div>
                     </div>
@@ -1230,7 +1258,7 @@ export default function PlaceAndDealDrawer({
                       >
                         <ShoppingBag className="h-3 w-3 text-[#00D2B4]" />
                         <span>
-                          {isAr ? 'عرض السلة' : 'Open Cart'} (
+                          {isAr ? "عرض السلة" : "Open Cart"} (
                           {cart.reduce((s, i) => s + i.quantity, 0)})
                         </span>
                       </button>
@@ -1239,9 +1267,7 @@ export default function PlaceAndDealDrawer({
 
                   <div className="mt-3 space-y-2.5">
                     {placeData.catalogProducts.map((prod: any) => {
-                      const inCart = cart.find(
-                        (c) => c.productId === prod.id,
-                      );
+                      const inCart = cart.find((c) => c.productId === prod.id);
                       const qty = inCart?.quantity || 0;
                       const cartItemPayload: GlobalCartItem = {
                         productId: prod.id,
@@ -1280,7 +1306,7 @@ export default function PlaceAndDealDrawer({
                               {prod.dimensionsCm?.length > 45 && (
                                 <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">
                                   <Car className="h-2.5 w-2.5" />
-                                  {isAr ? 'يتطلب سيارة' : 'Car Trunk'}
+                                  {isAr ? "يتطلب سيارة" : "Car Trunk"}
                                 </span>
                               )}
                             </div>
@@ -1320,7 +1346,7 @@ export default function PlaceAndDealDrawer({
                                   className="inline-flex items-center gap-1 rounded-xl bg-[#0072DC] px-3 py-2 text-[11px] font-extrabold text-white shadow-2xs transition hover:bg-[#005bb5] active:scale-95"
                                 >
                                   <Plus className="h-3.5 w-3.5" />
-                                  <span>{isAr ? 'أضف' : 'Add'}</span>
+                                  <span>{isAr ? "أضف" : "Add"}</span>
                                 </button>
                               ) : (
                                 <div className="flex items-center gap-1 rounded-xl border border-[#0072DC]/30 bg-white p-1 shadow-2xs">
@@ -1357,17 +1383,17 @@ export default function PlaceAndDealDrawer({
               )}
 
             {/* Cinema Scope Notice if category is Cinemas */}
-            {placeData.categoryId === 'cat-cinemas' && (
+            {placeData.categoryId === "cat-cinemas" && (
               <div className="rounded-2xl border border-sky-200 bg-sky-50 p-3 text-xs text-[#072549]">
                 <p className="font-extrabold">
                   {isAr
-                    ? 'تنبيه نطاق المرحلة الأولى للسينما:'
-                    : 'Phase 1 Cinema Information Notice:'}
+                    ? "تنبيه نطاق المرحلة الأولى للسينما:"
+                    : "Phase 1 Cinema Information Notice:"}
                 </p>
                 <p className="mt-0.5 text-[11px] text-slate-600">
                   {isAr
-                    ? 'نعرض معلومات دار السينما وتجهيزات القاعات والبوسترات المعلنة، ولا نعرض جداول ومواعيد عرض الأفلام اللحظية في المرحلة الأولى.'
-                    : 'Wherio displays cinema branch facilities, hall types, and announced posters. Live movie showtime schedules are excluded in Phase 1.'}
+                    ? "نعرض معلومات دار السينما وتجهيزات القاعات والبوسترات المعلنة، ولا نعرض جداول ومواعيد عرض الأفلام اللحظية في المرحلة الأولى."
+                    : "Wherio displays cinema branch facilities, hall types, and announced posters. Live movie showtime schedules are excluded in Phase 1."}
                 </p>
               </div>
             )}
@@ -1379,8 +1405,8 @@ export default function PlaceAndDealDrawer({
                   <ImageIcon className="h-4 w-4 text-[#0072DC]" />
                   <h3 className="text-xs font-extrabold text-[#072549]">
                     {isAr
-                      ? 'صور المنيو فقط (بدون تسعير فردي أو طلب إلكتروني):'
-                      : 'Menu Photo Gallery (Informational View-Only):'}
+                      ? "صور المنيو فقط (بدون تسعير فردي أو طلب إلكتروني):"
+                      : "Menu Photo Gallery (Informational View-Only):"}
                   </h3>
                 </div>
               </div>
@@ -1402,7 +1428,7 @@ export default function PlaceAndDealDrawer({
                           {isAr ? m.titleAr : m.titleEn}
                         </span>
                         <span className="text-[10px] text-slate-400">
-                          {isAr ? 'آخر تحديث:' : 'Updated:'} {m.lastUpdated}
+                          {isAr ? "آخر تحديث:" : "Updated:"} {m.lastUpdated}
                         </span>
                       </div>
                     </div>
@@ -1411,8 +1437,8 @@ export default function PlaceAndDealDrawer({
               ) : (
                 <p className="mt-2 rounded-xl bg-slate-50 p-3 text-center text-xs text-slate-500">
                   {isAr
-                    ? 'لا توجد صور منيو مرفوعة لهذا المكان حالياً.'
-                    : 'No menu photos uploaded for this venue yet.'}
+                    ? "لا توجد صور منيو مرفوعة لهذا المكان حالياً."
+                    : "No menu photos uploaded for this venue yet."}
                 </p>
               )}
             </div>
@@ -1421,13 +1447,13 @@ export default function PlaceAndDealDrawer({
             <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xs">
               <h3 className="text-xs font-extrabold text-[#072549]">
                 {isAr
-                  ? 'البوسترات والعروض المعلنة من المكان (للاطلاع فقط):'
-                  : 'Announced Promotional Posters (Informational Only):'}
+                  ? "البوسترات والعروض المعلنة من المكان (للاطلاع فقط):"
+                  : "Announced Promotional Posters (Informational Only):"}
               </h3>
               <p className="mt-0.5 text-[11px] text-slate-500">
                 {isAr
-                  ? 'تُعرض البوسترات الترويجية المعلنة من المكان نفسه دون أكواد خصم أو شراء قسائم عبر المنصة.'
-                  : 'Displays official posters announced by the venue without in-app checkout or promo codes.'}
+                  ? "تُعرض البوسترات الترويجية المعلنة من المكان نفسه دون أكواد خصم أو شراء قسائم عبر المنصة."
+                  : "Displays official posters announced by the venue without in-app checkout or promo codes."}
               </p>
 
               {placeData.announcedPosters?.length > 0 ? (
@@ -1459,8 +1485,8 @@ export default function PlaceAndDealDrawer({
               ) : (
                 <p className="mt-2 rounded-xl bg-slate-50 p-3 text-center text-xs text-slate-500">
                   {isAr
-                    ? 'لا توجد بوسترات معلنة حالياً لهذا المكان.'
-                    : 'No announced posters currently listed for this venue.'}
+                    ? "لا توجد بوسترات معلنة حالياً لهذا المكان."
+                    : "No announced posters currently listed for this venue."}
                 </p>
               )}
             </div>
@@ -1468,7 +1494,7 @@ export default function PlaceAndDealDrawer({
         )}
 
         {/* TAB 3: RATINGS & REVIEWS (4 SUB-RATINGS + SEPARATE EXTERNAL SCORE) */}
-        {activeTab === 'reviews' && placeData && (
+        {activeTab === "reviews" && placeData && (
           <div className="space-y-3 p-4">
             {/* Internal Wherio Rating & 4 Sub-Ratings Breakdown */}
             <div className="rounded-2xl border border-[#0072DC]/25 bg-white p-3.5 shadow-2xs">
@@ -1477,19 +1503,19 @@ export default function PlaceAndDealDrawer({
                   <span className="inline-flex items-center gap-1 rounded-md bg-[#072549] px-2 py-0.5 text-[10px] font-extrabold text-white">
                     <ShieldCheck className="h-3 w-3 text-[#00D2B4]" />
                     {isAr
-                      ? 'تقييم ويريو الداخلي الموثق'
-                      : 'Wherio Verified Internal Rating'}
+                      ? "تقييم ويريو الداخلي الموثق"
+                      : "Wherio Verified Internal Rating"}
                   </span>
                   <p className="mt-1 text-[11px] text-slate-500">
                     {isAr
-                      ? 'من مستخدمين موثقين برقم الهاتف (OTP) والبريد الإلكتروني الفريد'
-                      : 'From members verified via both Phone OTP & Unique Email'}
+                      ? "من مستخدمين موثقين برقم الهاتف (OTP) والبريد الإلكتروني الفريد"
+                      : "From members verified via both Phone OTP & Unique Email"}
                   </p>
                 </div>
                 <div className="text-right">
                   {isUnrated ? (
                     <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-                      {isAr ? 'غير مقيّم بعد' : 'Unrated'}
+                      {isAr ? "غير مقيّم بعد" : "Unrated"}
                     </span>
                   ) : (
                     <>
@@ -1500,8 +1526,8 @@ export default function PlaceAndDealDrawer({
                       </div>
                       <div className="text-[10px] text-slate-400">
                         {placeData.internalRating?.reviewCount ??
-                          placeData.rating?.reviewCount}{' '}
-                        {isAr ? 'مراجعة' : 'reviews'}
+                          placeData.rating?.reviewCount}{" "}
+                        {isAr ? "مراجعة" : "reviews"}
                       </div>
                     </>
                   )}
@@ -1513,27 +1539,27 @@ export default function PlaceAndDealDrawer({
                 <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 text-[11px]">
                   {[
                     {
-                      labelEn: 'Quality',
-                      labelAr: 'الجودة',
+                      labelEn: "Quality",
+                      labelAr: "الجودة",
                       val:
                         placeData.internalRating?.criteriaAvg?.quality ?? 4.8,
                     },
                     {
-                      labelEn: 'Service',
-                      labelAr: 'الخدمة',
+                      labelEn: "Service",
+                      labelAr: "الخدمة",
                       val:
                         placeData.internalRating?.criteriaAvg?.service ?? 4.7,
                     },
                     {
-                      labelEn: 'Atmosphere',
-                      labelAr: 'الأجواء',
+                      labelEn: "Atmosphere",
+                      labelAr: "الأجواء",
                       val:
                         placeData.internalRating?.criteriaAvg?.atmosphere ??
                         4.8,
                     },
                     {
-                      labelEn: 'Facilities & Value',
-                      labelAr: 'المرافق والقيمة',
+                      labelEn: "Facilities & Value",
+                      labelAr: "المرافق والقيمة",
                       val:
                         placeData.internalRating?.criteriaAvg
                           ?.facilitiesValue ?? 4.6,
@@ -1566,8 +1592,8 @@ export default function PlaceAndDealDrawer({
                   <div>
                     <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
                       {isAr
-                        ? 'تقييم خارجي منفصل (للمقارنة فقط — لا يُدمج مع تقييم ويريو)'
-                        : 'Separate External Rating (Never mixed with Wherio Score)'}
+                        ? "تقييم خارجي منفصل (للمقارنة فقط — لا يُدمج مع تقييم ويريو)"
+                        : "Separate External Rating (Never mixed with Wherio Score)"}
                     </p>
                     <p className="mt-0.5 text-xs font-bold text-slate-800">
                       {placeData.externalRating.sourceName}
@@ -1579,8 +1605,8 @@ export default function PlaceAndDealDrawer({
                       {placeData.externalRating.rating} / 5.0
                     </span>
                     <p className="mt-0.5 text-[10px] text-slate-500">
-                      ({placeData.externalRating.reviewCount}{' '}
-                      {isAr ? 'تقييم خارجي' : 'external ratings'})
+                      ({placeData.externalRating.reviewCount}{" "}
+                      {isAr ? "تقييم خارجي" : "external ratings"})
                     </p>
                   </div>
                 </div>
@@ -1593,11 +1619,11 @@ export default function PlaceAndDealDrawer({
                 <h4 className="text-xs font-extrabold text-[#072549]">
                   {existingUserReview
                     ? isAr
-                      ? 'تعديل تقييمك الموثق لهذا المكان (تقييم واحد قابل للتعديل):'
-                      : 'Edit Your Verified Review (1 Editable Review per Place):'
+                      ? "تعديل تقييمك الموثق لهذا المكان (تقييم واحد قابل للتعديل):"
+                      : "Edit Your Verified Review (1 Editable Review per Place):"
                     : isAr
-                      ? 'أضف تقييمك الموثق (يتطلب توثيق الهاتف OTP + البريد الإلكتروني):'
-                      : 'Write a Verified Review (Requires Phone OTP + Confirmed Email):'}
+                      ? "أضف تقييمك الموثق (يتطلب توثيق الهاتف OTP + البريد الإلكتروني):"
+                      : "Write a Verified Review (Requires Phone OTP + Confirmed Email):"}
                 </h4>
               </div>
 
@@ -1609,13 +1635,13 @@ export default function PlaceAndDealDrawer({
                     <div>
                       <p className="font-extrabold">
                         {isAr
-                          ? 'حسابك يحتاج استكمال التوثيق المزدوج:'
-                          : 'Dual Verification Required to Post Reviews:'}
+                          ? "حسابك يحتاج استكمال التوثيق المزدوج:"
+                          : "Dual Verification Required to Post Reviews:"}
                       </p>
                       <p className="mt-0.5">
                         {isAr
-                          ? 'لضمان مصداقية التقييمات، يشترط توثيق رقم الهاتف (OTP) والبريد الإلكتروني الفريد قبل نشر التقييم.'
-                          : 'Both Phone OTP and a Unique Email must be verified before submitting a review.'}
+                          ? "لضمان مصداقية التقييمات، يشترط توثيق رقم الهاتف (OTP) والبريد الإلكتروني الفريد قبل نشر التقييم."
+                          : "Both Phone OTP and a Unique Email must be verified before submitting a review."}
                       </p>
                       {onRequireVerifyEmail && (
                         <button
@@ -1623,8 +1649,8 @@ export default function PlaceAndDealDrawer({
                           className="mt-1.5 rounded-lg bg-[#072549] px-2.5 py-1 text-[10px] font-bold text-white"
                         >
                           {isAr
-                            ? 'توثيق البريد الإلكتروني الآن'
-                            : 'Verify Unique Email Now'}
+                            ? "توثيق البريد الإلكتروني الآن"
+                            : "Verify Unique Email Now"}
                         </button>
                       )}
                     </div>
@@ -1635,7 +1661,7 @@ export default function PlaceAndDealDrawer({
               {/* Overall Stars */}
               <div className="mt-2.5">
                 <label className="text-[11px] font-bold text-slate-600">
-                  {isAr ? 'التقييم العام:' : 'Overall Rating:'}
+                  {isAr ? "التقييم العام:" : "Overall Rating:"}
                 </label>
                 <div className="mt-1 flex items-center gap-1.5">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -1645,8 +1671,8 @@ export default function PlaceAndDealDrawer({
                       onClick={() => setReviewRating(star)}
                       className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-extrabold ${
                         reviewRating >= star
-                          ? 'bg-[#FF991F] text-[#072549]'
-                          : 'bg-slate-100 text-slate-400'
+                          ? "bg-[#FF991F] text-[#072549]"
+                          : "bg-slate-100 text-slate-400"
                       }`}
                     >
                       <Star className="h-3 w-3 fill-current" />
@@ -1660,26 +1686,26 @@ export default function PlaceAndDealDrawer({
               <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
                 {[
                   {
-                    labelEn: '1. Quality',
-                    labelAr: '١. الجودة',
+                    labelEn: "1. Quality",
+                    labelAr: "١. الجودة",
                     val: qualityRating,
                     setVal: setQualityRating,
                   },
                   {
-                    labelEn: '2. Service',
-                    labelAr: '٢. الخدمة',
+                    labelEn: "2. Service",
+                    labelAr: "٢. الخدمة",
                     val: serviceRating,
                     setVal: setServiceRating,
                   },
                   {
-                    labelEn: '3. Atmosphere',
-                    labelAr: '٣. الأجواء',
+                    labelEn: "3. Atmosphere",
+                    labelAr: "٣. الأجواء",
                     val: atmosphereRating,
                     setVal: setAtmosphereRating,
                   },
                   {
-                    labelEn: '4. Facilities & Value',
-                    labelAr: '٤. المرافق والقيمة',
+                    labelEn: "4. Facilities & Value",
+                    labelAr: "٤. المرافق والقيمة",
                     val: facilitiesValueRating,
                     setVal: setFacilitiesValueRating,
                   },
@@ -1714,8 +1740,8 @@ export default function PlaceAndDealDrawer({
                   onChange={(e) => setReviewPhotoUrl(e.target.value)}
                   placeholder={
                     isAr
-                      ? 'رابط صورة اختياري مع التقييم (https://...)'
-                      : 'Optional photo URL to attach with review (https://...)'
+                      ? "رابط صورة اختياري مع التقييم (https://...)"
+                      : "Optional photo URL to attach with review (https://...)"
                   }
                   className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-[#0072DC] focus:outline-none"
                 />
@@ -1727,8 +1753,8 @@ export default function PlaceAndDealDrawer({
                 onChange={(e) => setReviewComment(e.target.value)}
                 placeholder={
                   isAr
-                    ? 'اكتب تجربتك التفصيلية (10 أحرف على الأقل)...'
-                    : 'Share your detailed experience (min 10 chars)...'
+                    ? "اكتب تجربتك التفصيلية (10 أحرف على الأقل)..."
+                    : "Share your detailed experience (min 10 chars)..."
                 }
                 className="mt-2 w-full rounded-xl border border-slate-200 p-2.5 text-xs focus:border-[#0072DC] focus:outline-none"
               />
@@ -1742,14 +1768,14 @@ export default function PlaceAndDealDrawer({
                   className="flex-1 rounded-xl bg-[#072549] py-2.5 text-xs font-extrabold text-white hover:bg-[#0072DC] disabled:opacity-50"
                 >
                   {submittingReview
-                    ? '...'
+                    ? "..."
                     : existingUserReview
                       ? isAr
-                        ? 'حفظ تعديل التقييم الموثق'
-                        : 'Update Your Verified Review'
+                        ? "حفظ تعديل التقييم الموثق"
+                        : "Update Your Verified Review"
                       : isAr
-                        ? 'نشر التقييم الموثق'
-                        : 'Publish Verified Review'}
+                        ? "نشر التقييم الموثق"
+                        : "Publish Verified Review"}
                 </button>
 
                 {existingUserReview && (
@@ -1759,7 +1785,7 @@ export default function PlaceAndDealDrawer({
                     onClick={() => handleRemoveOwnReview(existingUserReview.id)}
                     className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100"
                   >
-                    {isAr ? 'سحب تقييمي' : 'Withdraw Review'}
+                    {isAr ? "سحب تقييمي" : "Withdraw Review"}
                   </button>
                 )}
               </div>
@@ -1782,11 +1808,11 @@ export default function PlaceAndDealDrawer({
                       <p className="mt-0.5">
                         {reviewFeedback.isEdited
                           ? isAr
-                            ? 'تم تحديث مراجعتك السابقة بنجاح.'
-                            : 'Your existing review was updated.'
+                            ? "تم تحديث مراجعتك السابقة بنجاح."
+                            : "Your existing review was updated."
                           : isAr
-                            ? 'تمت إضافة تقييمك بنجاح.'
-                            : 'Your verified review is now live.'}
+                            ? "تمت إضافة تقييمك بنجاح."
+                            : "Your verified review is now live."}
                       </p>
                     </>
                   )}
@@ -1799,7 +1825,7 @@ export default function PlaceAndDealDrawer({
               {placeData.reviews?.map((rev: any) => {
                 const isReported =
                   reportedReviewIds.includes(rev.id) ||
-                  rev.moderationStatus === 'REPORTED';
+                  rev.moderationStatus === "REPORTED";
                 return (
                   <div
                     key={rev.id}
@@ -1812,7 +1838,7 @@ export default function PlaceAndDealDrawer({
                         </span>
                         {rev.isEdited && (
                           <span className="mx-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500">
-                            {isAr ? 'معدّل' : 'Edited'}
+                            {isAr ? "معدّل" : "Edited"}
                           </span>
                         )}
                       </div>
@@ -1835,19 +1861,19 @@ export default function PlaceAndDealDrawer({
                     {rev.subRatings && (
                       <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-slate-600">
                         <span className="rounded bg-slate-100 px-1.5 py-0.5">
-                          {isAr ? 'الجودة:' : 'Quality:'}{' '}
+                          {isAr ? "الجودة:" : "Quality:"}{" "}
                           <strong>{rev.subRatings.quality}/5</strong>
                         </span>
                         <span className="rounded bg-slate-100 px-1.5 py-0.5">
-                          {isAr ? 'الخدمة:' : 'Service:'}{' '}
+                          {isAr ? "الخدمة:" : "Service:"}{" "}
                           <strong>{rev.subRatings.service}/5</strong>
                         </span>
                         <span className="rounded bg-slate-100 px-1.5 py-0.5">
-                          {isAr ? 'الأجواء:' : 'Atmosphere:'}{' '}
+                          {isAr ? "الأجواء:" : "Atmosphere:"}{" "}
                           <strong>{rev.subRatings.atmosphere}/5</strong>
                         </span>
                         <span className="rounded bg-slate-100 px-1.5 py-0.5">
-                          {isAr ? 'المرافق:' : 'Facilities:'}{' '}
+                          {isAr ? "المرافق:" : "Facilities:"}{" "}
                           <strong>{rev.subRatings.facilitiesValue}/5</strong>
                         </span>
                       </div>
@@ -1879,18 +1905,18 @@ export default function PlaceAndDealDrawer({
                         onClick={() => handleReportReview(rev.id)}
                         className={`inline-flex items-center gap-1 font-bold ${
                           isReported
-                            ? 'text-amber-600'
-                            : 'text-slate-400 hover:text-rose-600'
+                            ? "text-amber-600"
+                            : "text-slate-400 hover:text-rose-600"
                         }`}
                       >
                         <Flag className="h-3 w-3" />
                         {isReported
                           ? isAr
-                            ? 'تم الإبلاغ للمشرفين'
-                            : 'Reported to Moderators'
+                            ? "تم الإبلاغ للمشرفين"
+                            : "Reported to Moderators"
                           : isAr
-                            ? 'إبلاغ عن مراجعة'
-                            : 'Report Review'}
+                            ? "إبلاغ عن مراجعة"
+                            : "Report Review"}
                       </button>
                     </div>
                   </div>

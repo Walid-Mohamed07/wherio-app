@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check, Globe } from 'lucide-react';
-import { CountryCode, LangCode } from '@/lib/api';
+import React, { useState, useRef, useEffect } from "react";
+import { ChevronDown, Check, Globe } from "lucide-react";
+import { CountryCode, LangCode } from "@/lib/api";
 
 export interface RegionConfig {
   code: CountryCode;
@@ -10,7 +10,7 @@ export interface RegionConfig {
   nameAr: string;
   shortEn: string;
   shortAr: string;
-  currency: 'SAR' | 'AED' | 'EGP';
+  currency: "SAR" | "AED" | "EGP";
   dialCode: string;
   launchCityEn: string;
   launchCityAr: string;
@@ -18,37 +18,37 @@ export interface RegionConfig {
 
 export const SUPPORTED_REGIONS: RegionConfig[] = [
   {
-    code: 'AE',
-    nameEn: 'United Arab Emirates',
-    nameAr: 'الإمارات العربية المتحدة',
-    shortEn: 'UAE • Abu Dhabi',
-    shortAr: 'الإمارات • أبوظبي',
-    currency: 'AED',
-    dialCode: '+971',
-    launchCityEn: 'Abu Dhabi (Launch)',
-    launchCityAr: 'أبوظبي (مدينة الإطلاق)',
+    code: "AE",
+    nameEn: "United Arab Emirates",
+    nameAr: "الإمارات العربية المتحدة",
+    shortEn: "UAE • Abu Dhabi",
+    shortAr: "الإمارات • أبوظبي",
+    currency: "AED",
+    dialCode: "+971",
+    launchCityEn: "Abu Dhabi (Launch)",
+    launchCityAr: "أبوظبي (مدينة الإطلاق)",
   },
   {
-    code: 'SA',
-    nameEn: 'Saudi Arabia',
-    nameAr: 'المملكة العربية السعودية',
-    shortEn: 'KSA • Riyadh',
-    shortAr: 'السعودية • الرياض',
-    currency: 'SAR',
-    dialCode: '+966',
-    launchCityEn: 'Riyadh (Launch)',
-    launchCityAr: 'الرياض (مدينة الإطلاق)',
+    code: "SA",
+    nameEn: "Saudi Arabia",
+    nameAr: "المملكة العربية السعودية",
+    shortEn: "KSA • Riyadh",
+    shortAr: "السعودية • الرياض",
+    currency: "SAR",
+    dialCode: "+966",
+    launchCityEn: "Riyadh (Launch)",
+    launchCityAr: "الرياض (مدينة الإطلاق)",
   },
   {
-    code: 'EG',
-    nameEn: 'Egypt',
-    nameAr: 'جمهورية مصر العربية',
-    shortEn: 'Egypt • Cairo',
-    shortAr: 'مصر • القاهرة',
-    currency: 'EGP',
-    dialCode: '+20',
-    launchCityEn: 'Cairo (Expansion)',
-    launchCityAr: 'القاهرة (توسع مستقبلي)',
+    code: "EG",
+    nameEn: "Egypt",
+    nameAr: "جمهورية مصر العربية",
+    shortEn: "Egypt • Cairo",
+    shortAr: "مصر • القاهرة",
+    currency: "EGP",
+    dialCode: "+20",
+    launchCityEn: "Cairo (Expansion)",
+    launchCityAr: "القاهرة (توسع مستقبلي)",
   },
 ];
 
@@ -56,20 +56,20 @@ export const SUPPORTED_LANGUAGES: Array<{
   code: LangCode;
   label: string;
   nativeLabel: string;
-  dir: 'ltr' | 'rtl';
+  dir: "ltr" | "rtl";
 }> = [
-  { code: 'en', label: 'English', nativeLabel: 'English (LTR)', dir: 'ltr' },
-  { code: 'ar', label: 'Arabic', nativeLabel: 'العربية (RTL)', dir: 'rtl' },
+  { code: "en", label: "English", nativeLabel: "English (LTR)", dir: "ltr" },
+  { code: "ar", label: "Arabic", nativeLabel: "العربية (RTL)", dir: "rtl" },
 ];
 
 export function CountryFlagSvg({
   code,
-  className = 'h-4 w-5 rounded-[3px] shadow-2xs shrink-0',
+  className = "h-4 w-5 rounded-[3px] shadow-2xs shrink-0",
 }: {
   code: CountryCode;
   className?: string;
 }) {
-  if (code === 'SA') {
+  if (code === "SA") {
     return (
       <svg viewBox="0 0 28 20" className={className} aria-label="Saudi Arabia">
         <rect width="28" height="20" rx="2" fill="#006C35" />
@@ -83,7 +83,7 @@ export function CountryFlagSvg({
       </svg>
     );
   }
-  if (code === 'AE') {
+  if (code === "AE") {
     return (
       <svg viewBox="0 0 28 20" className={className} aria-label="UAE">
         <rect width="28" height="6.66" fill="#00732F" />
@@ -113,18 +113,18 @@ export function CountryFlagSvg({
  * - Subtitle: EXPLORE • REVIEW • GO
  */
 export function WherioBrandLogo({
-  size = 'md',
+  size = "md",
   showSubtitle = true,
   isAr = false,
 }: {
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   showSubtitle?: boolean;
   isAr?: boolean;
 }) {
   const iconDims =
-    size === 'sm' ? 'h-8 w-8' : size === 'lg' ? 'h-12 w-12' : 'h-9 w-9';
+    size === "sm" ? "h-8 w-8" : size === "lg" ? "h-12 w-12" : "h-9 w-9";
   const textSize =
-    size === 'sm' ? 'text-base' : size === 'lg' ? 'text-2xl' : 'text-lg';
+    size === "sm" ? "text-base" : size === "lg" ? "text-2xl" : "text-lg";
 
   return (
     <div className="inline-flex items-center gap-2.5 select-none">
@@ -211,11 +211,11 @@ export function WherioBrandLogo({
         </div>
         {showSubtitle && (
           <div className="mt-1 flex items-center gap-1 text-[9px] font-extrabold tracking-widest uppercase text-[#072549]/80">
-            <span>{isAr ? 'استكشف' : 'EXPLORE'}</span>
+            <span>{isAr ? "استكشف" : "EXPLORE"}</span>
             <span className="h-1 w-1 rounded-full bg-[#00B89C]" />
-            <span>{isAr ? 'قيّم' : 'REVIEW'}</span>
+            <span>{isAr ? "قيّم" : "REVIEW"}</span>
             <span className="h-1 w-1 rounded-full bg-[#0072DC]" />
-            <span>{isAr ? 'انطلق' : 'GO'}</span>
+            <span>{isAr ? "انطلق" : "GO"}</span>
           </div>
         )}
       </div>
@@ -230,16 +230,16 @@ export function RegionSelectDropdown({
   value,
   onChange,
   lang,
-  variant = 'compact',
+  variant = "compact",
 }: {
   value: CountryCode;
   onChange: (next: CountryCode) => void;
   lang: LangCode;
-  variant?: 'compact' | 'full';
+  variant?: "compact" | "full";
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const isAr = lang === 'ar';
+  const isAr = lang === "ar";
 
   const currentRegion =
     SUPPORTED_REGIONS.find((r) => r.code === value) || SUPPORTED_REGIONS[0];
@@ -250,8 +250,8 @@ export function RegionSelectDropdown({
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
   return (
@@ -265,22 +265,22 @@ export function RegionSelectDropdown({
             : `${currentRegion.nameEn} (${currentRegion.launchCityEn})`
         }
         className={`flex items-center justify-between rounded-xl border transition ${
-          variant === 'full'
-            ? 'w-full gap-2 border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-[#072549] hover:border-[#0072DC] hover:bg-white'
-            : 'gap-1 border-[#0072DC]/25 bg-[#0072DC]/8 px-2 py-1.5 text-[10px] font-extrabold text-[#072549] hover:bg-[#0072DC]/15'
+          variant === "full"
+            ? "w-full gap-2 border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-[#072549] hover:border-[#0072DC] hover:bg-white"
+            : "gap-1 border-[#0072DC]/25 bg-[#0072DC]/8 px-2 py-1.5 text-[10px] font-extrabold text-[#072549] hover:bg-[#0072DC]/15"
         }`}
       >
         <span className="flex items-center gap-1.5 truncate">
           <CountryFlagSvg code={currentRegion.code} />
           <span>
-            {variant === 'full'
+            {variant === "full"
               ? `${isAr ? currentRegion.nameAr : currentRegion.nameEn} (${isAr ? currentRegion.launchCityAr : currentRegion.launchCityEn})`
               : currentRegion.code}
           </span>
         </span>
         <ChevronDown
           className={`h-3 w-3 shrink-0 text-[#0072DC] transition-transform ${
-            open ? 'rotate-180' : ''
+            open ? "rotate-180" : ""
           }`}
         />
       </button>
@@ -288,13 +288,13 @@ export function RegionSelectDropdown({
       {open && (
         <div
           className={`absolute z-50 mt-1.5 w-60 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl ${
-            isAr ? 'left-0' : 'right-0'
+            isAr ? "left-0" : "right-0"
           }`}
         >
           <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {isAr
-              ? 'اختر الدولة ومدينة الإطلاق'
-              : 'Select Country & Launch City'}
+              ? "اختر الدولة ومدينة الإطلاق"
+              : "Select Country & Launch City"}
           </div>
           {SUPPORTED_REGIONS.map((region) => {
             const active = region.code === value;
@@ -308,8 +308,8 @@ export function RegionSelectDropdown({
                 }}
                 className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition ${
                   active
-                    ? 'bg-[#0072DC]/10 font-extrabold text-[#072549]'
-                    : 'font-medium text-slate-700 hover:bg-slate-50'
+                    ? "bg-[#0072DC]/10 font-extrabold text-[#072549]"
+                    : "font-medium text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -319,7 +319,7 @@ export function RegionSelectDropdown({
                       {isAr ? region.nameAr : region.nameEn}
                     </p>
                     <p className="text-[10px] text-slate-400">
-                      {isAr ? region.launchCityAr : region.launchCityEn} •{' '}
+                      {isAr ? region.launchCityAr : region.launchCityEn} •{" "}
                       {region.dialCode}
                     </p>
                   </div>
@@ -337,15 +337,15 @@ export function RegionSelectDropdown({
 export function LanguageSelectDropdown({
   value,
   onChange,
-  variant = 'compact',
+  variant = "compact",
 }: {
   value: LangCode;
   onChange: (next: LangCode) => void;
-  variant?: 'compact' | 'full';
+  variant?: "compact" | "full";
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const isAr = value === 'ar';
+  const isAr = value === "ar";
 
   const currentLang =
     SUPPORTED_LANGUAGES.find((l) => l.code === value) || SUPPORTED_LANGUAGES[0];
@@ -356,8 +356,8 @@ export function LanguageSelectDropdown({
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
   return (
@@ -367,24 +367,24 @@ export function LanguageSelectDropdown({
         onClick={() => setOpen((o) => !o)}
         title={currentLang.nativeLabel}
         className={`flex items-center justify-between rounded-xl border transition ${
-          variant === 'full'
-            ? 'w-full gap-1.5 border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-[#072549] hover:border-[#0072DC] hover:bg-white'
-            : 'gap-1 border-slate-200 bg-white px-2 py-1.5 text-[10px] font-extrabold text-[#072549] hover:border-[#0072DC]'
+          variant === "full"
+            ? "w-full gap-1.5 border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-[#072549] hover:border-[#0072DC] hover:bg-white"
+            : "gap-1 border-slate-200 bg-white px-2 py-1.5 text-[10px] font-extrabold text-[#072549] hover:border-[#0072DC]"
         }`}
       >
         <span className="flex items-center gap-1">
           <Globe className="h-3 w-3 text-[#00B89C]" />
           <span>
-            {variant === 'full'
+            {variant === "full"
               ? currentLang.nativeLabel
-              : currentLang.code === 'ar'
-                ? 'ع'
-                : 'EN'}
+              : currentLang.code === "ar"
+                ? "ع"
+                : "EN"}
           </span>
         </span>
         <ChevronDown
           className={`h-3 w-3 text-slate-500 transition-transform ${
-            open ? 'rotate-180' : ''
+            open ? "rotate-180" : ""
           }`}
         />
       </button>
@@ -392,11 +392,11 @@ export function LanguageSelectDropdown({
       {open && (
         <div
           className={`absolute z-50 mt-1.5 w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl ${
-            isAr ? 'left-0' : 'right-0'
+            isAr ? "left-0" : "right-0"
           }`}
         >
           <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            {isAr ? 'اختر اللغة' : 'Interface Language'}
+            {isAr ? "اختر اللغة" : "Interface Language"}
           </div>
           {SUPPORTED_LANGUAGES.map((l) => {
             const active = l.code === value;
@@ -410,8 +410,8 @@ export function LanguageSelectDropdown({
                 }}
                 className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition ${
                   active
-                    ? 'bg-[#0072DC]/10 font-extrabold text-[#072549]'
-                    : 'font-medium text-slate-700 hover:bg-slate-50'
+                    ? "bg-[#0072DC]/10 font-extrabold text-[#072549]"
+                    : "font-medium text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 <span>{l.nativeLabel}</span>
