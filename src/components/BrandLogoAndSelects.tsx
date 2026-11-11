@@ -224,7 +224,7 @@ export function WherioBrandLogo({
 }
 
 // Keep backward-compatible alias so any existing import continues to work
-export const WherioBrandLogo = WherioBrandLogo;
+export const AwfarBrandLogo = WherioBrandLogo;
 
 export function RegionSelectDropdown({
   value,

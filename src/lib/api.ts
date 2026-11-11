@@ -18,6 +18,8 @@ function resolveApiBaseUrl(): string {
 export const API_BASE_URL = resolveApiBaseUrl();
 
 export const TOKEN_STORAGE_KEY = "wherio_access_token";
+export const USER_PROFILE_STORAGE_KEY = "wherio_user_profile";
+export const ONBOARDING_DONE_KEY = "wherio_onboarding_completed";
 
 export function getStoredSessionToken(): string {
   if (typeof window === "undefined") return "";
@@ -26,10 +28,67 @@ export function getStoredSessionToken(): string {
 
 export function setStoredSessionToken(token?: string | null): void {
   if (typeof window === "undefined") return;
+  const maxAge = 60 * 60 * 24 * 30; // 30 days
   if (token) {
     window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    window.localStorage.setItem(ONBOARDING_DONE_KEY, "true");
+    document.cookie = `${TOKEN_STORAGE_KEY}=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    document.cookie = `${ONBOARDING_DONE_KEY}=true; path=/; max-age=${maxAge}; SameSite=Lax`;
   } else {
     window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    window.localStorage.removeItem(USER_PROFILE_STORAGE_KEY);
+    document.cookie = `${TOKEN_STORAGE_KEY}=; path=/; max-age=0; SameSite=Lax`;
+  }
+}
+
+export function getStoredUserProfile(): any | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(USER_PROFILE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.expiresAt && Date.now() > parsed.expiresAt) {
+      window.localStorage.removeItem(USER_PROFILE_STORAGE_KEY);
+      return null;
+    }
+    return parsed?.user || parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUserProfile(user: any | null): void {
+  if (typeof window === "undefined") return;
+  if (user && user.id) {
+    const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
+    window.localStorage.setItem(
+      USER_PROFILE_STORAGE_KEY,
+      JSON.stringify({ user, expiresAt }),
+    );
+    window.localStorage.setItem(ONBOARDING_DONE_KEY, "true");
+  } else {
+    window.localStorage.removeItem(USER_PROFILE_STORAGE_KEY);
+  }
+}
+
+export function isOnboardingCompleted(): boolean {
+  if (typeof window === "undefined") return true;
+  return (
+    window.localStorage.getItem(ONBOARDING_DONE_KEY) === "true" ||
+    Boolean(window.localStorage.getItem(TOKEN_STORAGE_KEY)) ||
+    Boolean(window.localStorage.getItem(USER_PROFILE_STORAGE_KEY))
+  );
+}
+
+export function setOnboardingCompleted(done = true): void {
+  if (typeof window === "undefined") return;
+  const maxAge = 60 * 60 * 24 * 30;
+  if (done) {
+    window.localStorage.setItem(ONBOARDING_DONE_KEY, "true");
+    document.cookie = `${ONBOARDING_DONE_KEY}=true; path=/; max-age=${maxAge}; SameSite=Lax`;
+  } else {
+    window.localStorage.removeItem(ONBOARDING_DONE_KEY);
+    document.cookie = `${ONBOARDING_DONE_KEY}=; path=/; max-age=0; SameSite=Lax`;
   }
 }
 

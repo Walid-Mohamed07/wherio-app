@@ -60,6 +60,8 @@ interface PlaceAndDealDrawerProps {
   onUpdateCartItem?: (item: GlobalCartItem, delta: number) => void;
   onOpenCart?: () => void;
   onParkingUpdated?: () => void;
+  onTabChange?: (tab: "overview" | "parking" | "media" | "reviews") => void;
+  asPage?: boolean;
 }
 
 export default function PlaceAndDealDrawer({
@@ -79,13 +81,26 @@ export default function PlaceAndDealDrawer({
   onUpdateCartItem,
   onOpenCart,
   onParkingUpdated,
+  onTabChange,
+  asPage = false,
 }: PlaceAndDealDrawerProps) {
   const isAr = lang === "ar";
   const [loading, setLoading] = useState(true);
   const [placeData, setPlaceData] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<
+  const [activeTab, setActiveTabState] = useState<
     "overview" | "parking" | "media" | "reviews"
   >(initialTab);
+
+  useEffect(() => {
+    setActiveTabState(initialTab);
+  }, [initialTab]);
+
+  const setActiveTab = (
+    nextTab: "overview" | "parking" | "media" | "reviews",
+  ) => {
+    setActiveTabState(nextTab);
+    onTabChange?.(nextTab);
+  };
 
   // Parking reservation state (when viewing a cat-parking spot)
   const [selectedSlotId, setSelectedSlotId] = useState<string>("");
@@ -336,8 +351,14 @@ export default function PlaceAndDealDrawer({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="w-full max-w-[430px] rounded-2xl bg-white p-6 text-center text-xs font-bold text-[#072549]">
+      <div
+        className={
+          asPage
+            ? "flex min-h-[60vh] items-center justify-center p-4"
+            : "fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        }
+      >
+        <div className="w-full max-w-[430px] rounded-2xl border border-slate-200 bg-white p-6 text-center text-xs font-bold text-[#072549] shadow-xs">
           {isAr
             ? "جاري تحميل ملف المكان الموثق في ويريو..."
             : "Loading Wherio verified place profile..."}
@@ -358,10 +379,20 @@ export default function PlaceAndDealDrawer({
     placeData?.rating?.isUnrated || (placeData?.rating?.reviewCount ?? 0) === 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center bg-black/70 backdrop-blur-xs">
+    <div
+      className={
+        asPage
+          ? "w-full"
+          : "fixed inset-0 z-50 flex justify-center bg-black/70 backdrop-blur-xs"
+      }
+    >
       <div
         dir={isAr ? "rtl" : "ltr"}
-        className="relative flex h-full w-full max-w-[430px] flex-col overflow-y-auto bg-slate-50 pb-20 no-scrollbar"
+        className={
+          asPage
+            ? "relative flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 pb-6 shadow-2xs"
+            : "relative flex h-full w-full max-w-[430px] flex-col overflow-y-auto bg-slate-50 pb-20 no-scrollbar"
+        }
       >
         {/* Top Hero Image & Floating Controls */}
         <div className="relative h-56 w-full shrink-0 bg-[#072549]">
